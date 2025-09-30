@@ -1,0 +1,20 @@
+export const ALLOWED_FILE_TYPES = {
+  HERO_SLIDES: ['jpg', 'jpeg', 'png'],
+  DOCUMENTS: [
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp',
+    'video/mp4',
+    'mp3',
+    'pdf',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'ods',
+    'odp',
+    'odp',
+  ],
+};
