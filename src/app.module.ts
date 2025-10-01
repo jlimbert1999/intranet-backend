@@ -6,6 +6,10 @@ import { EnvironmentVariables, validate } from './config/env.validation';
 import { ContentModule } from './modules/content/content.module';
 import { FilesModule } from './modules/files/files.module';
 import { DocumentModule } from './modules/documents/document.module';
+import { CommunicationsModule } from './modules/communications/communications.module';
+import { CommunicationsController } from './modules/communications/communications.controller';
+import { CommunicationsService } from './modules/communications/communications.service';
+
 
 @Module({
   imports: [
@@ -30,8 +34,9 @@ import { DocumentModule } from './modules/documents/document.module';
     FilesModule,
     ContentModule,
     DocumentModule,
+    CommunicationsModule,
   ],
-  controllers: [],
-  providers: [],
+  controllers: [CommunicationsController],
+  providers: [CommunicationsService, CommunicationsService],
 })
 export class AppModule {}
