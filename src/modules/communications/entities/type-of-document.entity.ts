@@ -1,8 +1,7 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { Communication } from './communication.entity';
 
-@Entity('type_of_documents')//-> nombre de la tabla
-
+@Entity('type_of_documents')
 @Unique(['name'])
 export class TypeOfDocument {
     @PrimaryGeneratedColumn()

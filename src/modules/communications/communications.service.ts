@@ -2,56 +2,44 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Communication } from './entities/communication.entity';
-import { TypeOfDocument } from './entities/type-of-document.entity';
 import { CreateCommunicationDto } from './dto/create-communication.dto';
 import { UpdateCommunicationDto } from './dto/update-communication.dto';
-import { CreateTypeOfDocumentDto } from './dto/create-type-of-document.dto';
+import { FilesService } from 'src/modules/files/files.service';
+import { FileGroup } from 'src/modules/files/file-group.enum';
 
 @Injectable()
 export class CommunicationsService {
   constructor(
-    @InjectRepository(Communication) private readonly  commRepo: Repository<Communication>,
-    @InjectRepository(TypeOfDocument) private readonly  todRepo: Repository<TypeOfDocument>,
+    @InjectRepository(Communication)
+    private readonly commRepo: Repository<Communication>,
+    // 👇 inyecta FilesService
+    private readonly filesService: FilesService,
   ) {}
 
-  // ----- TypeOfDocument -----
-  async createType(dto: CreateTypeOfDocumentDto) {
-    const entity = this.todRepo.create(dto);
-    return this.todRepo.save(entity);
-  }
-  findAllTypes() { return this.todRepo.find({ order: { name: 'ASC' } }); }
-  async getType(id: number) {
-    const t = await this.todRepo.findOne({ where: { id } });
-    if (!t) throw new NotFoundException('TypeOfDocument not found');
-    return t;
-  }
-
-  // ----- Communications -----
+  // ----- Create -----
   async createCommunication(dto: CreateCommunicationDto) {
-    const tod = await this.todRepo.findOne({ where: { id: dto.typeOfDocumentId } });
-    if (!tod) throw new NotFoundException('TypeOfDocument not found');
     const entity = this.commRepo.create({
-      typeOfDocument: tod,
-      area_id: dto.area_id,
+      titulo: dto.titulo,
       number_document: dto.number_document,
       publication_date: dto.publication_date,
+      file: dto.file ?? null,
     });
     return this.commRepo.save(entity);
   }
 
+  
   async listCommunications(opts?: {
-    page?: number; limit?: number; search?: string;
-    typeOfDocumentId?: number; area_id?: number; from?: string; to?: string;
+    page?: number; limit?: number; search?: string; from?: string; to?: string;
   }) {
     const page = Math.max(1, opts?.page ?? 1);
     const limit = Math.min(100, Math.max(1, opts?.limit ?? 10));
 
-    const qb = this.commRepo.createQueryBuilder('c')
-      .leftJoinAndSelect('c.typeOfDocument', 'tod');
+    const qb = this.commRepo.createQueryBuilder('c');
 
-    if (opts?.typeOfDocumentId) qb.andWhere('tod.id = :tid', { tid: opts.typeOfDocumentId });
-    if (opts?.area_id) qb.andWhere('c.area_id = :aid', { aid: opts.area_id });
-    if (opts?.search) qb.andWhere('c.number_document ILIKE :s', { s: `%${opts.search}%` });
+    if (opts?.search) {
+      
+      qb.andWhere('(c.titulo ILIKE :s OR c.number_document ILIKE :s)', { s: `%${opts.search}%` });
+    }
     if (opts?.from) qb.andWhere('c.publication_date >= :from', { from: opts.from });
     if (opts?.to) qb.andWhere('c.publication_date <= :to', { to: opts.to });
 
@@ -60,31 +48,55 @@ export class CommunicationsService {
       .take(limit);
 
     const [data, total] = await qb.getManyAndCount();
-    return { data, total, page, limit };
+    return { data, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
+  // ----- Get by id -----
   async getCommunication(id: number) {
-    const c = await this.commRepo.findOne({ where: { id }, relations: { typeOfDocument: true } });
+    const c = await this.commRepo.findOne({ where: { id } });
     if (!c) throw new NotFoundException('Communication not found');
     return c;
   }
 
+  // ----- Update -----
   async updateCommunication(id: number, dto: UpdateCommunicationDto) {
     const c = await this.getCommunication(id);
-    if (dto.typeOfDocumentId) {
-      const tod = await this.todRepo.findOne({ where: { id: dto.typeOfDocumentId } });
-      if (!tod) throw new NotFoundException('TypeOfDocument not found');
-      c.typeOfDocument = tod;
-    }
-    if (dto.area_id !== undefined) c.area_id = dto.area_id;
+    if (dto.titulo !== undefined) c.titulo = dto.titulo;
     if (dto.number_document !== undefined) c.number_document = dto.number_document;
     if (dto.publication_date !== undefined) c.publication_date = dto.publication_date;
+    if (dto.file !== undefined) c.file = dto.file ?? null;
     return this.commRepo.save(c);
   }
 
+  // ----- Delete -----
   async deleteCommunication(id: number) {
     const c = await this.getCommunication(id);
     await this.commRepo.remove(c);
     return { deleted: true };
   }
+//-----------------------------------------------------------------------------
+
+  async attachFileToCommunication(id: number, file: Express.Multer.File) {
+    const c = await this.getCommunication(id);
+
+    
+    const saved = await this.filesService.saveFile(file, FileGroup.DOCUMENTIS);
+
+    const publicUrl = this.filesService.buildFileUrl(saved.fileName, FileGroup.DOCUMENTIS);
+
+    c.file = publicUrl;
+    await this.commRepo.save(c);
+
+    return {
+      message: 'File attached successfully',
+      file: {
+        url: publicUrl,
+        fileName: saved.fileName,
+        originalName: saved.originalName,
+        type: saved.type, // 'image' | 'video' | 'audio' | 'document'
+      },
+      communication: c,
+    };
+  }
+
 }

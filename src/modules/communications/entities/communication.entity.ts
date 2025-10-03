@@ -1,17 +1,22 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, Index } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, Index, JoinColumn, Unique } from 'typeorm';
 import { TypeOfDocument } from './type-of-document.entity';
 
-@Entity('communications')//-> nombre de la tabla
+@Entity('communications')
+@Unique(['number_document']) // opcional: único global
 export class Communication {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => TypeOfDocument, (tod) => tod.communications, { nullable: false, onDelete: 'RESTRICT' })
+    @ManyToOne(() => TypeOfDocument, (tod) => tod.communications, {
+        nullable: false,
+        onDelete: 'RESTRICT',
+    })
+    @JoinColumn({ name: 'type_of_document_id' })
     typeOfDocument: TypeOfDocument;
 
     @Index()
-    @Column({ type: 'int' })
-    area_id: number;
+    @Column({ type: 'varchar', length: 160 })
+    titulo: string;
 
     @Index()
     @Column({ type: 'varchar', length: 80 })
@@ -20,4 +25,7 @@ export class Communication {
     @Index()
     @Column({ type: 'date' })
     publication_date: string;
-}
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    file: string | null;
+    }

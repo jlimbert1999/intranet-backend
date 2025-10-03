@@ -15,7 +15,7 @@ export class CustomFileTypeValidator extends FileValidator {
 
   async isValid(file?: Express.Multer.File): Promise<boolean> {
     if (!file) return false;
-
+    
     const detected = await fileTypeFromBuffer(file.buffer);
 
     if (!detected) return false;
