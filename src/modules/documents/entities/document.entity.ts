@@ -1,14 +1,5 @@
-import {
-  Column,
-  Entity,
-  ManyToOne,
-  CreateDateColumn,
-  UpdateDateColumn,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-
-import { DocumentSection } from './document-section.entity';
-import { DocumentCategory } from './document.category.entity';
+import { Column, Entity, ManyToOne, CreateDateColumn, UpdateDateColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { SectionCategory } from './section-category.entity';
 
 @Entity('documents')
 export class Document {
@@ -21,15 +12,15 @@ export class Document {
   @Column()
   originalName: string;
 
-  @ManyToOne(() => DocumentCategory, (category) => category.documents)
-  category: DocumentCategory;
-
-  @ManyToOne(() => DocumentSection, (section) => section.documents)
-  section: DocumentSection | null;
+  @Column({ type: 'int', default: new Date().getFullYear() })
+  fiscalYear: number;
 
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToOne(() => SectionCategory, (sc) => sc.documents)
+  sectionCategory: SectionCategory;
 }

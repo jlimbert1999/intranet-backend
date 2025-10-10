@@ -6,6 +6,7 @@ import { EnvironmentVariables, validate } from './config/env.validation';
 import { ContentModule } from './modules/content/content.module';
 import { FilesModule } from './modules/files/files.module';
 import { DocumentModule } from './modules/documents/document.module';
+import { PortalModule } from './modules/portal/portal.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { DocumentModule } from './modules/documents/document.module';
     FilesModule,
     ContentModule,
     DocumentModule,
+    PortalModule,
   ],
   controllers: [],
   providers: [],

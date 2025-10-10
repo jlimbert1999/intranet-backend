@@ -1,15 +1,17 @@
-import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
   IsArray,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
+  Min,
   ValidateNested,
 } from 'class-validator';
+import { PaginationDto } from 'src/modules/common';
 
 export class DocumentDto {
   @IsUUID()
@@ -23,22 +25,46 @@ export class DocumentDto {
   @IsString()
   @IsNotEmpty()
   fileName: string;
+
+  @IsInt()
+  @Min(2000)
+  @Max(new Date().getFullYear() + 1)
+  @Type(() => Number)
+  @IsOptional()
+  fiscalYear?: number;
 }
 
 export class CreateDocumentsDto {
-  @IsInt()
-  categoryId: number;
-
-  @IsInt()
-  sectionId?: number;
-
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => DocumentDto)
-  @ArrayMinSize(1)
   documents: DocumentDto[];
 }
 
-export class UpdateDocumentDto extends PartialType(
-  OmitType(CreateDocumentsDto, ['categoryId', 'sectionId']),
-) {}
+type FilterField = 'originalName' | 'year';
+type OrderDirection = 'ASC' | 'DESC';
+
+export class FilterDocumentsDto extends PaginationDto {
+  @IsInt()
+  @Type(() => Number)
+  @IsOptional()
+  categoryId?: number;
+
+  @IsInt()
+  @Type(() => Number)
+  @IsOptional()
+  sectionId?: number;
+
+  @IsIn(['asc', 'desc'])
+  @IsOptional()
+  orderDirection: OrderDirection = 'DESC';
+
+  @IsIn(['originalName', 'createdAt'])
+  @IsOptional()
+  orderBy?: FilterField;
+
+  @IsInt()
+  @Type(() => Number)
+  @IsOptional()
+  fiscalYear?: number;
+}

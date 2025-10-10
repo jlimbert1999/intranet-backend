@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Document } from './document.entity';
+import { SectionCategory } from './section-category.entity';
 
 @Entity('document_sections')
 export class DocumentSection {
@@ -9,9 +9,6 @@ export class DocumentSection {
   @Column()
   name: string;
 
-  @Column({ type: 'text', nullable: true })
-  description: string | null;
-
-  @OneToMany(() => Document, (document) => document.section)
-  documents: Document[];
+  @OneToMany(() => SectionCategory, (sc) => sc.section)
+  sectionCategories: SectionCategory[];
 }

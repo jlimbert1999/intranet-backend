@@ -4,12 +4,10 @@ import { IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateDocumentCategoryDto {
   @IsString()
-  @MinLength(10)
-  @MaxLength(100)
+  @MinLength(3)
+  @MaxLength(50)
   @Transform(({ value }) => (value as string).trim().toUpperCase())
   name: string;
 }
 
-export class UpdateDocumentCategoryDto extends PartialType(
-  CreateDocumentCategoryDto,
-) {}
+export class UpdateDocumentCategoryDto extends PartialType(CreateDocumentCategoryDto) {}

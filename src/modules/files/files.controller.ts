@@ -56,6 +56,7 @@ export class FilesController {
   ) {
     return this.filesService.saveFile(file, FileGroup.DOCUMENTIS);
   }
+  
 
   @Get(':group/:fileName')
   getFile(@Res() res: Response, @Param() requestParams: GetFileDto) {

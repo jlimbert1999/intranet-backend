@@ -1,12 +1,9 @@
-import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
-import {
-  DocumentCategoryService,
-  DocumentSectionService,
-  DocumentService,
-} from '../services';
-import { CreateDocumentsDto, UpdateDocumentDto } from '../dtos';
+import { Body, Controller, Get, Param, ParseIntPipe, Put, Query } from '@nestjs/common';
+import { DocumentCategoryService, DocumentSectionService, DocumentService } from '../services';
+import { CreateDocumentsDto } from '../dtos';
+import { PaginationDto } from 'src/modules/common';
 
-@Controller('document')
+@Controller('documents')
 export class DocumentController {
   constructor(
     private documentCategoryService: DocumentCategoryService,
@@ -14,31 +11,23 @@ export class DocumentController {
     private documentService: DocumentService,
   ) {}
 
-  @Get('categories')
+  @Get('categories-sections')
   getCategories() {
-    return this.documentCategoryService.getCategories();
+    return this.documentCategoryService.getCategoriesWithSections();
   }
 
   @Get('sections')
   getSections() {
-    return this.documentSectionService.getSections();
+    // return this.documentSectionService.getSections();
   }
 
   @Get()
-  findAll() {
-    return this.documentService.findAll();
+  findAll(@Query() queryParams: PaginationDto) {
+    return this.documentService.getDocumentsToManage(queryParams);
   }
 
-  @Post()
-  createDocuments(@Body() body: CreateDocumentsDto) {
-    return this.documentService.create(body);
-  }
-
-  @Put(':categoryId')
-  update(
-    @Param('categoryId') categoryId: string,
-    @Body() body: UpdateDocumentDto,
-  ) {
-    return this.documentService.update(+categoryId, body);
+  @Put('sync/:relationId')
+  syncDocuments(@Param('relationId', ParseIntPipe) relationId: string, @Body() documentsDto: CreateDocumentsDto) {
+    return this.documentService.syncDocuments(+relationId, documentsDto);
   }
 }

@@ -6,7 +6,7 @@ import {
   Entity,
   Column,
 } from 'typeorm';
-import { Document } from './document.entity';
+import { SectionCategory } from './section-category.entity';
 
 @Entity('document_categories')
 export class DocumentCategory {
@@ -16,15 +16,13 @@ export class DocumentCategory {
   @Column({ unique: true, length: 50 })
   name: string;
 
-  @Column({ type: 'text', nullable: true })
-  description?: string;
-
-  @OneToMany(() => Document, (document) => document.category)
-  documents: Document[];
+  @OneToMany(() => SectionCategory, (sc) => sc.category)
+  sectionCategories: SectionCategory[];
 
   @BeforeInsert()
   @BeforeUpdate()
   normalize() {
     this.name = this.name.replace(/\s+/g, ' ').trim().toUpperCase();
   }
+
 }
