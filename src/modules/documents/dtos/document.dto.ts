@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
-  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -41,7 +40,6 @@ export class CreateDocumentsDto {
   documents: DocumentDto[];
 }
 
-type FilterField = 'originalName' | 'year';
 type OrderDirection = 'ASC' | 'DESC';
 
 export class FilterDocumentsDto extends PaginationDto {
@@ -55,13 +53,10 @@ export class FilterDocumentsDto extends PaginationDto {
   @IsOptional()
   sectionId?: number;
 
-  @IsIn(['asc', 'desc'])
+  // @IsIn(['asc', 'desc'])
   @IsOptional()
-  orderDirection: OrderDirection = 'DESC';
+  orderDirection?: OrderDirection = 'DESC';
 
-  @IsIn(['originalName', 'createdAt'])
-  @IsOptional()
-  orderBy?: FilterField;
 
   @IsInt()
   @Type(() => Number)

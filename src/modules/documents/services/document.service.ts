@@ -38,8 +38,6 @@ export class DocumentService {
 
   async syncDocuments(relationId: number, docsDto: CreateDocumentsDto) {
     const { documents } = docsDto;
-
-    console.log(documents);
     const sectionCategory = await this.sectionCategoryRep.findOne({
       where: { id: relationId },
       relations: { category: true, section: true, documents: true },
@@ -87,7 +85,8 @@ export class DocumentService {
   }
 
   async filterDocuments(filter: FilterDocumentsDto) {
-    const { limit, offset, term, categoryId, sectionId, fiscalYear, orderDirection, orderBy } = filter;
+    console.log('FILTER BACKEND DOCUMENTS');
+    const { limit, offset, term, categoryId, sectionId, fiscalYear, orderDirection } = filter;
 
     const where: FindOptionsWhere<Document> = {
       ...(term && { originalName: ILike(`%${term}%`) }),
@@ -96,9 +95,9 @@ export class DocumentService {
       ...(fiscalYear && { fiscalYear }),
     };
 
-    const result = await this.docRepository.find({
+    const [data, total] = await this.docRepository.findAndCount({
       where: where,
-      ...(orderBy && { order: { [orderBy]: orderDirection } }),
+      ...(orderDirection && { order: { originalName: orderDirection } }),
       relations: {
         sectionCategory: {
           category: true,
@@ -119,7 +118,7 @@ export class DocumentService {
       skip: offset,
     });
 
-    return result.map((doc) => this.plainDocument(doc));
+    return { documents: data.map((doc) => this.plainDocument(doc)), total };
   }
 
   private plainDocument(doc: Document) {
