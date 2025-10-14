@@ -10,14 +10,13 @@ import { HeroSlides } from '../entities';
 @Injectable()
 export class HeroSlidesService {
   constructor(
-    @InjectRepository(HeroSlides)
-    private heroSlidesRepository: Repository<HeroSlides>,
+    @InjectRepository(HeroSlides) private heroSlidesRepository: Repository<HeroSlides>,
     private dataSource: DataSource,
     private fileService: FilesService,
   ) {}
 
   async findAll() {
-    const slides = await this.heroSlidesRepository.find({});
+    const slides = await this.heroSlidesRepository.find({ order: { order: 'ASC' } });
     return slides.map(({ image, ...props }) => ({
       ...props,
       image: this.fileService.buildFileUrl(image, FileGroup.HERO_SLIDES),
@@ -43,8 +42,7 @@ export class HeroSlidesService {
       const toSave = slides.map((slide) =>
         queryRunner.manager.create(HeroSlides, {
           id: slide.id,
-          image: slide.image,
-          order: slide.order,
+          ...slide,
         }),
       );
       const result = await queryRunner.manager.save(toSave);

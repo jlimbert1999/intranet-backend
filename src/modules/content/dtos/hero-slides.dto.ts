@@ -1,13 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  ValidateNested,
-  ArrayMinSize,
-  IsNotEmpty,
-  IsArray,
-  IsString,
-  IsNumber,
-  IsOptional,
-} from 'class-validator';
+import { ValidateNested, ArrayMinSize, IsNotEmpty, IsArray, IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class HeroSlideDto {
   @IsNumber()
@@ -20,6 +12,18 @@ export class HeroSlideDto {
 
   @IsNumber()
   order: number;
+
+  @IsString()
+  @IsOptional()
+  title: string;
+
+  @IsString()
+  @IsOptional()
+  description: string;
+
+  @IsString()
+  @IsOptional()
+  redirectUrl: string;
 }
 
 export class CreateHeroSlideDto {

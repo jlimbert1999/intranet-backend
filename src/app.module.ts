@@ -3,10 +3,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { EnvironmentVariables, validate } from './config/env.validation';
-import { ContentModule } from './modules/content/content.module';
-import { FilesModule } from './modules/files/files.module';
 import { DocumentModule } from './modules/documents/document.module';
+import { ContentModule } from './modules/content/content.module';
 import { PortalModule } from './modules/portal/portal.module';
+import { FilesModule } from './modules/files/files.module';
 
 @Module({
   imports: [
