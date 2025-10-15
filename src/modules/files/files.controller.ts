@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseFilePipeBuilder,
-  Post,
-  Res,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseFilePipeBuilder, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 
@@ -56,7 +47,24 @@ export class FilesController {
   ) {
     return this.filesService.saveFile(file, FileGroup.DOCUMENTIS);
   }
-  
+
+  @Post('quick-access')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadQuickAccessIcon(
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addValidator(
+          new CustomFileTypeValidator({
+            validTypes: ALLOWED_FILE_TYPES.QUICK_ACCESS,
+          }),
+        )
+        .addMaxSizeValidator({ maxSize: 5 * 1024 * 1024 })
+        .build(),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.filesService.saveFile(file, FileGroup.QUICK_ACCESS);
+  }
 
   @Get(':group/:fileName')
   getFile(@Res() res: Response, @Param() requestParams: GetFileDto) {

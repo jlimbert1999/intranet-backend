@@ -17,4 +17,5 @@ export const ALLOWED_FILE_TYPES = {
     'odp',
     'odp',
   ],
+  QUICK_ACCESS: ['jpg', 'jpeg', 'png'],
 };
