@@ -1,5 +1,12 @@
-import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { ILike, Repository, DataSource, FindOptionsWhere } from 'typeorm';
 
 import { Document, DocumentCategory, DocumentSection, SectionCategory } from '../entities';
@@ -12,14 +19,10 @@ import { PaginationDto } from 'src/modules/common';
 export class DocumentService {
   constructor(
     private dataSource: DataSource,
-    @InjectRepository(Document) private docRepository: Repository<Document>,
-    @InjectRepository(DocumentSection)
-    private docSectionRepository: Repository<DocumentSection>,
-    @InjectRepository(DocumentCategory)
-    private docCategoryRepository: Repository<DocumentCategory>,
-    @InjectRepository(SectionCategory)
-    private sectionCategoryRep: Repository<SectionCategory>,
     private fileService: FilesService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @InjectRepository(SectionCategory) private sectionCategoryRep: Repository<SectionCategory>,
+    @InjectRepository(Document) private docRepository: Repository<Document>,
   ) {}
 
   async getDocumentsToManage({ term, limit, offset }: PaginationDto) {
@@ -76,7 +79,6 @@ export class DocumentService {
 
       return { ...sectionCategory, documents: result };
     } catch (error: unknown) {
-      console.log(error);
       await queryRunner.rollbackTransaction();
       throw new InternalServerErrorException(`Failed create documents`);
     } finally {
@@ -85,7 +87,6 @@ export class DocumentService {
   }
 
   async filterDocuments(filter: FilterDocumentsDto) {
-    console.log('FILTER BACKEND DOCUMENTS');
     const { limit, offset, term, categoryId, sectionId, fiscalYear, orderDirection } = filter;
 
     const where: FindOptionsWhere<Document> = {
@@ -95,30 +96,36 @@ export class DocumentService {
       ...(fiscalYear && { fiscalYear }),
     };
 
-    const [data, total] = await this.docRepository.findAndCount({
+    const [documents, total] = await this.docRepository.findAndCount({
       where: where,
-      ...(orderDirection && { order: { originalName: orderDirection } }),
-      relations: {
-        sectionCategory: {
-          category: true,
-          section: true,
-        },
+      order: {
+        downloadCount: 'DESC',
+        ...(orderDirection && { originalName: orderDirection }),
       },
-      select: {
-        sectionCategory: {
-          category: {
-            name: true,
-          },
-          section: {
-            name: true,
-          },
-        },
-      },
+      relations: { sectionCategory: { category: true } },
       take: limit,
       skip: offset,
     });
+    return { documents: documents.map((doc) => this.plainDocument(doc)), total };
+  }
 
-    return { documents: data.map((doc) => this.plainDocument(doc)), total };
+  async incrementDownloadCount(id: string, userIp: string) {
+    const cacheKey = `download:${id}:${userIp}`;
+
+    const alreadyCounted = await this.cacheManager.get<boolean>(cacheKey);
+
+    if (alreadyCounted) return { skipped: true, message: 'Too frequent' };
+
+    const doc = await this.docRepository.findOneBy({ id });
+    if (!doc) throw new NotFoundException(`Document ${id} not found - download count`);
+
+    doc.downloadCount++;
+
+    await this.docRepository.save(doc);
+
+    await this.cacheManager.set(cacheKey, true, 300000);
+
+    return { skippend: false, newCount: doc.downloadCount };
   }
 
   private plainDocument(doc: Document) {

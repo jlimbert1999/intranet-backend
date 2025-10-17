@@ -7,11 +7,16 @@ import { DocumentModule } from './modules/documents/document.module';
 import { ContentModule } from './modules/content/content.module';
 import { PortalModule } from './modules/portal/portal.module';
 import { FilesModule } from './modules/files/files.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       validate,
+      isGlobal: true,
+    }),
+    CacheModule.register({
+      ttl: 0,
       isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({

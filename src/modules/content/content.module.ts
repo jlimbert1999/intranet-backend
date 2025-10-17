@@ -10,6 +10,6 @@ import { FilesModule } from '../files/files.module';
   imports: [TypeOrmModule.forFeature([HeroSlides, QuickAccess]), FilesModule],
   controllers: [HeroSlideController, QuickAccessController],
   providers: [HeroSlidesService, QuickAccessService],
-  exports: [QuickAccessService],
+  exports: [HeroSlidesService, QuickAccessService],
 })
 export class ContentModule {}

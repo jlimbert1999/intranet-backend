@@ -1,15 +1,16 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Ip, Param, Patch, Post } from '@nestjs/common';
 
 import { DocumentCategoryService, DocumentService } from '../documents/services';
+import { HeroSlidesService, QuickAccessService } from '../content/services';
 import { FilterDocumentsDto } from '../documents/dtos';
-import { QuickAccessService } from '../content/services';
 
 @Controller('portal')
 export class PortalController {
   constructor(
     private documentCategoryService: DocumentCategoryService,
-    private documentService: DocumentService,
     private quickAccessService: QuickAccessService,
+    private documentService: DocumentService,
+    private heroSlideService: HeroSlidesService,
   ) {}
 
   @Get('categories-sections')
@@ -17,13 +18,26 @@ export class PortalController {
     return this.documentCategoryService.getCategoriesWithSections();
   }
 
-  @Get('quick-access')
-  getQuickAccess() {
-    return this.quickAccessService.findAll();
-  }
-
   @Post('documents')
   filterDocuments(@Body() body: FilterDocumentsDto) {
     return this.documentService.filterDocuments(body);
+  }
+
+  @Get('home')
+  async getHomeData() {
+    const [slides, quickAccess] = await Promise.all([
+      this.heroSlideService.findAll(),
+      this.quickAccessService.findAll(),
+    ]);
+
+    return {
+      slides,
+      quickAccess,
+    };
+  }
+
+  @Patch('document/:id/increment-download')
+  incrementDownload(@Param('id') id: string, @Ip() ip: string) {
+    return this.documentService.incrementDownloadCount(id, ip);
   }
 }

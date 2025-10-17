@@ -1,10 +1,4 @@
-import {
-  Unique,
-  Entity,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Unique, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { DocumentSection } from './document-section.entity';
 import { DocumentCategory } from './document.category.entity';
 import { Document } from './document.entity';

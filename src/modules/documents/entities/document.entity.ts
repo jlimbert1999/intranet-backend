@@ -15,6 +15,9 @@ export class Document {
   @Column({ type: 'int', default: new Date().getFullYear() })
   fiscalYear: number;
 
+  @Column({ default: 0 })
+  downloadCount: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
