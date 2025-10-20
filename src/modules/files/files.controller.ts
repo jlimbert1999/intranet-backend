@@ -66,6 +66,24 @@ export class FilesController {
     return this.filesService.saveFile(file, FileGroup.QUICK_ACCESS);
   }
 
+  @Post('communication')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadCommunication(
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addValidator(
+          new CustomFileTypeValidator({
+            validTypes: ALLOWED_FILE_TYPES.COMMUNICATIONS,
+          }),
+        )
+        .addMaxSizeValidator({ maxSize: 5 * 1024 * 1024 })
+        .build(),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.filesService.savePdfWithThumbnail(file, FileGroup.COMUNICATIONS);
+  }
+
   @Get(':group/:fileName')
   getFile(@Res() res: Response, @Param() requestParams: GetFileDto) {
     const path = this.filesService.getStaticFilePath(requestParams);

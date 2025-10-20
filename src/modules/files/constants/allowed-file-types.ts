@@ -18,4 +18,5 @@ export const ALLOWED_FILE_TYPES = {
     'odp',
   ],
   QUICK_ACCESS: ['jpg', 'jpeg', 'png'],
+  COMMUNICATIONS: ['pdf'],
 };

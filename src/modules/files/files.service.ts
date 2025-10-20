@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { mkdir, unlink, writeFile } from 'fs/promises';
@@ -13,6 +9,7 @@ import { v4 as uuid } from 'uuid';
 import { FileGroup } from './file-group.enum';
 import { GetFileDto } from './dtos/get-file.dto';
 import { EnvironmentVariables } from 'src/config';
+import { generatePdfThumbnail } from 'src/helpers';
 
 export interface savedFile {
   fileName: string;
@@ -22,14 +19,7 @@ export interface savedFile {
 
 @Injectable()
 export class FilesService {
-  private readonly BASE_UPLOAD_PATH = join(
-    __dirname,
-    '..',
-    '..',
-    '..',
-    'static',
-    'uploads',
-  );
+  private readonly BASE_UPLOAD_PATH = join(__dirname, '..', '..', '..', 'static', 'uploads');
 
   private readonly FOLDERS: Record<string, string[]> = {
     images: ['jpg', 'png', 'jpeg'],
@@ -45,31 +35,11 @@ export class FilesService {
     return `${host}/files/${group}/${filename}`;
   }
 
-  async saveFile(
-    file: Express.Multer.File,
-    group: FileGroup,
-  ): Promise<savedFile> {
-    const fileExtension =
-      file.originalname.split('.').pop()?.toLowerCase() ?? '';
-
-    const subfolder = this.getFolderByExtension(fileExtension);
-
-    const folderPath = join(this.BASE_UPLOAD_PATH, group, subfolder);
-
-    await this.ensureFolderExists(folderPath);
-
-    const savedFileName = `${uuid()}.${fileExtension}`;
-
-    const filePath = join(folderPath, savedFileName);
-
+  async saveFile(file: Express.Multer.File, group: FileGroup): Promise<savedFile> {
     try {
+      const { filePath, savedFileName } = await this.buildSavePathFile(file, group);
       await writeFile(filePath, new Uint8Array(file.buffer));
-
-      const decodedOriginalName = Buffer.from(
-        file.originalname,
-        'latin1',
-      ).toString('utf8');
-
+      const decodedOriginalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
       return {
         fileName: savedFileName,
         originalName: decodedOriginalName,
@@ -80,24 +50,34 @@ export class FilesService {
     }
   }
 
+  async savePdfWithThumbnail(file: Express.Multer.File, group: FileGroup) {
+    try {
+      const { filePath, savedFileName } = await this.buildSavePathFile(file, group);
+      await writeFile(filePath, new Uint8Array(file.buffer));
+      const previewPath = await generatePdfThumbnail(filePath);
+      return {
+        fileName: savedFileName,
+        previw: previewPath,
+      };
+    } catch (error: unknown) {
+      throw new InternalServerErrorException('Error saving file');
+    }
+  }
+
   async remove(fileName: string, group: FileGroup) {
     try {
-      const subfolder = this.getFolderByExtension(
-        fileName.split('.').pop() ?? '',
-      );
+      const subfolder = this.getFolderByExtension(fileName.split('.').pop() ?? '');
       const filePath = join(this.BASE_UPLOAD_PATH, group, subfolder, fileName);
       await unlink(filePath);
-    } catch (error) {
-      if (error.code !== 'ENOENT') {
+    } catch (error: any) {
+      if (error['code'] !== 'ENOENT') {
         throw error;
       }
     }
   }
 
   async removeMany(fileNames: string[], group: FileGroup) {
-    await Promise.all(
-      fileNames.map((fileName) => this.remove(fileName, group)),
-    );
+    await Promise.all(fileNames.map((fileName) => this.remove(fileName, group)));
   }
 
   getStaticFilePath({ fileName, group }: GetFileDto): string {
@@ -120,15 +100,29 @@ export class FilesService {
     return 'others';
   }
 
+  private async buildSavePathFile(file: Express.Multer.File, group: FileGroup) {
+    const fileExtension = file.originalname.split('.').pop()?.toLowerCase() ?? '';
+
+    const subfolder = this.getFolderByExtension(fileExtension);
+
+    const folderPath = join(this.BASE_UPLOAD_PATH, group, subfolder);
+
+    await this.ensureFolderExists(folderPath);
+
+    const savedFileName = `${uuid()}.${fileExtension}`;
+
+    const filePath = join(folderPath, savedFileName);
+
+    return { filePath, savedFileName };
+  }
+
   private async ensureFolderExists(path: string): Promise<void> {
     if (!existsSync(path)) {
       await mkdir(path, { recursive: true });
     }
   }
 
-  private getFileType(
-    mimetype: string,
-  ): 'image' | 'video' | 'audio' | 'document' {
+  private getFileType(mimetype: string): 'image' | 'video' | 'audio' | 'document' {
     if (mimetype.startsWith('image/')) return 'image';
     if (mimetype.startsWith('video/')) return 'video';
     if (mimetype.startsWith('audio/')) return 'audio';

@@ -125,7 +125,7 @@ export class DocumentService {
 
     await this.cacheManager.set(cacheKey, true, 300000);
 
-    return { skippend: false, newCount: doc.downloadCount };
+    return { skippend: false, message: 'Document downloaded count updated', newCount: doc.downloadCount };
   }
 
   private plainDocument(doc: Document) {

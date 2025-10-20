@@ -8,6 +8,7 @@ import { ContentModule } from './modules/content/content.module';
 import { PortalModule } from './modules/portal/portal.module';
 import { FilesModule } from './modules/files/files.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { CommunicationsModule } from './modules/communications/communications.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     ContentModule,
     DocumentModule,
     PortalModule,
+    CommunicationsModule,
   ],
   controllers: [],
   providers: [],
