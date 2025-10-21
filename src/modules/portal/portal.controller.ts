@@ -2,6 +2,7 @@ import { Body, Controller, Get, Ip, Param, Patch, Post } from '@nestjs/common';
 
 import { DocumentCategoryService, DocumentService } from '../documents/services';
 import { HeroSlidesService, QuickAccessService } from '../content/services';
+import { CommunicationService } from '../communications/communication.service';
 import { FilterDocumentsDto } from '../documents/dtos';
 
 @Controller('portal')
@@ -11,6 +12,7 @@ export class PortalController {
     private quickAccessService: QuickAccessService,
     private documentService: DocumentService,
     private heroSlideService: HeroSlidesService,
+    private coomunicationService: CommunicationService,
   ) {}
 
   @Get('categories-sections')
@@ -25,14 +27,16 @@ export class PortalController {
 
   @Get('home')
   async getHomeData() {
-    const [slides, quickAccess] = await Promise.all([
+    const [slides, quickAccess, communications] = await Promise.all([
       this.heroSlideService.findAll(),
       this.quickAccessService.findAll(),
+      this.coomunicationService.getLastCommunications(5),
     ]);
 
     return {
       slides,
       quickAccess,
+      communications,
     };
   }
 

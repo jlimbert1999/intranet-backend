@@ -1,15 +1,15 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { mkdir, unlink, writeFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import { mkdir, writeFile } from 'fs/promises';
 import { extname, join } from 'path';
 import { v4 as uuid } from 'uuid';
+import { existsSync } from 'fs';
 
-import { FileGroup } from './file-group.enum';
-import { GetFileDto } from './dtos/get-file.dto';
-import { EnvironmentVariables } from 'src/config';
 import { generatePdfThumbnail } from 'src/helpers';
+import { EnvironmentVariables } from 'src/config';
+import { GetFileDto } from './dtos/get-file.dto';
+import { FileGroup } from './file-group.enum';
 
 export interface savedFile {
   fileName: string;
@@ -17,35 +17,33 @@ export interface savedFile {
   type: string;
 }
 
+const FOLDERS: Record<string, string[]> = {
+  images: ['jpg', 'png', 'jpeg'],
+  documents: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ods', 'ppt'],
+  videos: ['mp4'],
+  audios: ['mp3'],
+};
+
 @Injectable()
 export class FilesService {
   private readonly BASE_UPLOAD_PATH = join(__dirname, '..', '..', '..', 'static', 'uploads');
 
-  private readonly FOLDERS: Record<string, string[]> = {
-    images: ['jpg', 'png', 'jpeg'],
-    documents: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ods', 'ppt'],
-    videos: ['mp4'],
-    audios: ['mp3'],
-  };
-
   constructor(private configService: ConfigService<EnvironmentVariables>) {}
-
-  public buildFileUrl(filename: string, group: FileGroup): string {
-    const host = this.configService.get('HOST', { infer: true });
-    return `${host}/files/${group}/${filename}`;
-  }
 
   async saveFile(file: Express.Multer.File, group: FileGroup): Promise<savedFile> {
     try {
       const { filePath, savedFileName } = await this.buildSavePathFile(file, group);
+
       await writeFile(filePath, new Uint8Array(file.buffer));
+
       const decodedOriginalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+
       return {
         fileName: savedFileName,
         originalName: decodedOriginalName,
         type: this.getFileType(file.mimetype),
       };
-    } catch (error: unknown) {
+    } catch (error) {
       throw new InternalServerErrorException('Error saving file');
     }
   }
@@ -53,31 +51,24 @@ export class FilesService {
   async savePdfWithThumbnail(file: Express.Multer.File, group: FileGroup) {
     try {
       const { filePath, savedFileName } = await this.buildSavePathFile(file, group);
+
       await writeFile(filePath, new Uint8Array(file.buffer));
-      const previewPath = await generatePdfThumbnail(filePath);
+
+      const groupPath = join(this.BASE_UPLOAD_PATH, group);
+
+      const imagesDir = join(groupPath, 'images');
+
+      await this.ensureFolderExists(imagesDir);
+
+      const previewName = await generatePdfThumbnail(filePath, imagesDir);
+
       return {
         fileName: savedFileName,
-        previw: previewPath,
+        previewName,
       };
-    } catch (error: unknown) {
-      throw new InternalServerErrorException('Error saving file');
+    } catch (error) {
+      throw new InternalServerErrorException('Error saving pdf file');
     }
-  }
-
-  async remove(fileName: string, group: FileGroup) {
-    try {
-      const subfolder = this.getFolderByExtension(fileName.split('.').pop() ?? '');
-      const filePath = join(this.BASE_UPLOAD_PATH, group, subfolder, fileName);
-      await unlink(filePath);
-    } catch (error: any) {
-      if (error['code'] !== 'ENOENT') {
-        throw error;
-      }
-    }
-  }
-
-  async removeMany(fileNames: string[], group: FileGroup) {
-    await Promise.all(fileNames.map((fileName) => this.remove(fileName, group)));
   }
 
   getStaticFilePath({ fileName, group }: GetFileDto): string {
@@ -90,9 +81,14 @@ export class FilesService {
     return filePath;
   }
 
+  buildFileUrl(filename: string, group: FileGroup): string {
+    const host = this.configService.get('HOST', { infer: true });
+    return `${host}/files/${group}/${filename}`;
+  }
+
   private getFolderByExtension(ext: string): string {
     ext = ext.toLowerCase();
-    for (const [folder, extensions] of Object.entries(this.FOLDERS)) {
+    for (const [folder, extensions] of Object.entries(FOLDERS)) {
       if (extensions.includes(ext)) {
         return folder;
       }

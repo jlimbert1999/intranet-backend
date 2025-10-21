@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { Transform, Type } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateCommunicationDto {
   @IsString()
@@ -16,7 +16,12 @@ export class CreateCommunicationDto {
 
   @IsNotEmpty()
   @IsString()
-  file: string;
+  fileName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @IsOptional()
+  previewName?: string;
 
   @Type(() => Number)
   @IsNumber()

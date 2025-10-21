@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 
 import { CreateCommunicationDto } from './dtos/communication.dto';
 import { Communication, TypeCommunication } from './entities';
+import { FilesService } from '../files/files.service';
+import { FileGroup } from '../files/file-group.enum';
 
 @Injectable()
 export class CommunicationService {
   constructor(
     @InjectRepository(Communication) private communicationRepository: Repository<Communication>,
     @InjectRepository(TypeCommunication) private typeCommunicationRespository: Repository<TypeCommunication>,
+    private fileService: FilesService,
   ) {}
 
   async getTypes() {
@@ -57,11 +60,21 @@ export class CommunicationService {
   }
 
   async getLastCommunications(limit = 5) {
-    return await this.communicationRepository.find({ order: { publication_date: 'DESC' }, take: limit });
+    const communications = await this.communicationRepository.find({ order: { publicationDate: 'DESC' }, take: limit });
+    return communications.map((item) => this.plainCommunication(item));
   }
 
   private async checkDuplicateCode(code: string) {
     const duplicate = await this.communicationRepository.findOneBy({ code: code });
     if (duplicate) throw new BadGatewayException(`Code: ${code} already exists}`);
+  }
+
+  private plainCommunication(communication: Communication) {
+    const { fileName, previewName, ...rest } = communication;
+    return {
+      fileUrl: this.fileService.buildFileUrl(fileName, FileGroup.COMUNICATIONS),
+      previewUrl: previewName ? this.fileService.buildFileUrl(previewName, FileGroup.COMUNICATIONS) : null,
+      ...rest,
+    };
   }
 }

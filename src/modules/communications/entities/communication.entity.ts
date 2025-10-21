@@ -26,10 +26,13 @@ export class Communication {
   code: string;
 
   @CreateDateColumn()
-  publication_date: Date;
+  publicationDate: Date;
 
   @Column()
-  file: string;
+  fileName: string;
+
+  @Column({ nullable: true })
+  previewName?: string;
 
   @ManyToOne(() => TypeCommunication, (type) => type.communications, {
     nullable: false,
