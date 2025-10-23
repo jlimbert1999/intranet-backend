@@ -1,4 +1,4 @@
-import { BadGatewayException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadGatewayException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -21,11 +21,11 @@ export class CommunicationService {
 
   async create(dto: CreateCommunicationDto) {
     try {
-      const { typeCommunicationId, ...props } = dto;
+      const { typeId: typeCommunicationId, ...props } = dto;
       const typeCommunication = await this.typeCommunicationRespository.findOneBy({ id: typeCommunicationId });
       if (!typeCommunication) throw new BadGatewayException('Type communication not found');
       await this.checkDuplicateCode(props.code);
-      const entity = this.communicationRepository.create({ ...props, typeCommunication });
+      const entity = this.communicationRepository.create({ ...props, type: typeCommunication });
       return this.communicationRepository.save(entity);
     } catch (error) {
       throw new InternalServerErrorException('Error creating communication');
@@ -62,6 +62,12 @@ export class CommunicationService {
   async getLastCommunications(limit = 5) {
     const communications = await this.communicationRepository.find({ order: { publicationDate: 'DESC' }, take: limit });
     return communications.map((item) => this.plainCommunication(item));
+  }
+
+  async getOneCommunication(id: string) {
+    const communication = await this.communicationRepository.findOne({ where: { id } });
+    if (!communication) throw new NotFoundException(`Communication ${id} not found`);
+    return this.plainCommunication(communication);
   }
 
   private async checkDuplicateCode(code: string) {

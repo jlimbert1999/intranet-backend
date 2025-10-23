@@ -14,8 +14,8 @@ import { TypeCommunication } from './type-communication.entity';
 @Entity('communications')
 @Unique(['code'])
 export class Communication {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Index()
   @Column({ type: 'varchar', length: 160 })
@@ -37,8 +37,9 @@ export class Communication {
   @ManyToOne(() => TypeCommunication, (type) => type.communications, {
     nullable: false,
     onDelete: 'RESTRICT',
+    eager: true,
   })
-  typeCommunication: TypeCommunication;
+  type: TypeCommunication;
 
   @BeforeInsert()
   @BeforeUpdate()

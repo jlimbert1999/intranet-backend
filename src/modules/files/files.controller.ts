@@ -76,7 +76,7 @@ export class FilesController {
             validTypes: ALLOWED_FILE_TYPES.COMMUNICATIONS,
           }),
         )
-        .addMaxSizeValidator({ maxSize: 5 * 1024 * 1024 })
+        .addMaxSizeValidator({ maxSize: 10 * 1024 * 1024 })
         .build(),
     )
     file: Express.Multer.File,

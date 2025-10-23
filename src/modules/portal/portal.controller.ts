@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Ip, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Ip, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 
 import { DocumentCategoryService, DocumentService } from '../documents/services';
 import { HeroSlidesService, QuickAccessService } from '../content/services';
@@ -30,7 +30,7 @@ export class PortalController {
     const [slides, quickAccess, communications] = await Promise.all([
       this.heroSlideService.findAll(),
       this.quickAccessService.findAll(),
-      this.coomunicationService.getLastCommunications(5),
+      this.coomunicationService.getLastCommunications(10),
     ]);
 
     return {
@@ -43,5 +43,10 @@ export class PortalController {
   @Patch('document/:id/increment-download')
   incrementDownload(@Param('id') id: string, @Ip() ip: string) {
     return this.documentService.incrementDownloadCount(id, ip);
+  }
+
+  @Get('communications/:id')
+  getOneCommunication(@Param('id', ParseUUIDPipe) id: string) {
+    return this.coomunicationService.getOneCommunication(id);
   }
 }

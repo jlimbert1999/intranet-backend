@@ -25,7 +25,7 @@ export class CreateCommunicationDto {
 
   @Type(() => Number)
   @IsNumber()
-  typeCommunicationId: number;
+  typeId: number;
 }
 
 export class UpdateCommunicationDto extends PartialType(CreateCommunicationDto) {}

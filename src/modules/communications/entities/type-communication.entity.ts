@@ -10,6 +10,6 @@ export class TypeCommunication {
   @Column({ type: 'varchar', length: 120 })
   name: string;
 
-  @OneToMany(() => Communication, (c) => c.typeCommunication)
+  @OneToMany(() => Communication, (c) => c.type)
   communications: Communication[];
 }
