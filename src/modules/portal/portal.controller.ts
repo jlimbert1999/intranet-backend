@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Ip, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Ip, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 
 import { DocumentCategoryService, DocumentService } from '../documents/services';
 import { HeroSlidesService, QuickAccessService } from '../content/services';
 import { CommunicationService } from '../communications/communication.service';
 import { FilterDocumentsDto } from '../documents/dtos';
+import { PaginationDto } from '../common';
 
 @Controller('portal')
 export class PortalController {
@@ -48,5 +49,10 @@ export class PortalController {
   @Get('communications/:id')
   getOneCommunication(@Param('id', ParseUUIDPipe) id: string) {
     return this.coomunicationService.getOneCommunication(id);
+  }
+
+  @Get('communications')
+  getCommunications(@Query() queryParams: PaginationDto) {
+    return this.coomunicationService.getLastCommunications();
   }
 }
