@@ -62,8 +62,11 @@ export class FilesService {
 
       const previewName = await generatePdfThumbnail(filePath, imagesDir);
 
+      const decodedOriginalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+
       return {
         fileName: savedFileName,
+        originalName: decodedOriginalName,
         previewName,
       };
     } catch (error) {

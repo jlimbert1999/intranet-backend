@@ -1,11 +1,13 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { Transform, Type } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { PaginationDto } from 'src/modules/common';
 
 export class CreateCommunicationDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(160)
+  @Transform(({ value }) => (value as string).trim().toUpperCase())
   reference: string;
 
   @IsString()
@@ -13,6 +15,10 @@ export class CreateCommunicationDto {
   @MaxLength(80)
   @Transform(({ value }) => (value as string).trim().toUpperCase())
   code: string;
+
+  @IsString()
+  @IsNotEmpty()
+  originalName: string;
 
   @IsNotEmpty()
   @IsString()
@@ -35,4 +41,11 @@ export class CreateTypeCommunicationDto {
   @IsNotEmpty()
   @MaxLength(120)
   name: string;
+}
+
+export class GetPublicCommunicationsDto extends PaginationDto {
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  typeId?: number;
 }

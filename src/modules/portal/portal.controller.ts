@@ -31,7 +31,7 @@ export class PortalController {
     const [slides, quickAccess, communications] = await Promise.all([
       this.heroSlideService.findAll(),
       this.quickAccessService.findAll(),
-      this.coomunicationService.getLastCommunications(10),
+      this.coomunicationService.getLatest(10),
     ]);
 
     return {
@@ -44,15 +44,5 @@ export class PortalController {
   @Patch('document/:id/increment-download')
   incrementDownload(@Param('id') id: string, @Ip() ip: string) {
     return this.documentService.incrementDownloadCount(id, ip);
-  }
-
-  @Get('communications/:id')
-  getOneCommunication(@Param('id', ParseUUIDPipe) id: string) {
-    return this.coomunicationService.getOneCommunication(id);
-  }
-
-  @Get('communications')
-  getCommunications(@Query() queryParams: PaginationDto) {
-    return this.coomunicationService.getLastCommunications();
   }
 }

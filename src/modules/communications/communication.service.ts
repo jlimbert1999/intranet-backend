@@ -1,11 +1,12 @@
-import { BadGatewayException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadGatewayException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOneOptions, FindOptionsWhere, ILike, Repository } from 'typeorm';
 
-import { CreateCommunicationDto } from './dtos/communication.dto';
+import { CreateCommunicationDto, GetPublicCommunicationsDto, UpdateCommunicationDto } from './dtos/communication.dto';
 import { Communication, TypeCommunication } from './entities';
 import { FilesService } from '../files/files.service';
 import { FileGroup } from '../files/file-group.enum';
+import { PaginationDto } from '../common';
 
 @Injectable()
 export class CommunicationService {
@@ -19,52 +20,67 @@ export class CommunicationService {
     return await this.typeCommunicationRespository.find();
   }
 
+  async findAll({ limit, offset, term }: PaginationDto) {
+    const [communications, total] = await this.communicationRepository.findAndCount({
+      ...(term && { where: [{ reference: ILike(`%${term}%`) }, { code: ILike(`%${term}%`) }] }),
+      take: limit,
+      skip: offset,
+      order: { publicationDate: 'DESC' },
+    });
+    return { communications, total };
+  }
+
   async create(dto: CreateCommunicationDto) {
-    try {
-      const { typeId: typeCommunicationId, ...props } = dto;
-      const typeCommunication = await this.typeCommunicationRespository.findOneBy({ id: typeCommunicationId });
+    const { typeId: typeCommunicationId, ...props } = dto;
+
+    const typeCommunication = await this.typeCommunicationRespository.findOneBy({ id: typeCommunicationId });
+
+    if (!typeCommunication) throw new BadGatewayException('Type communication not found');
+
+    await this.checkDuplicateCode(props.code);
+
+    const entity = this.communicationRepository.create({ ...props, type: typeCommunication });
+
+    return this.communicationRepository.save(entity);
+  }
+
+  async update(id: string, dto: UpdateCommunicationDto) {
+    const communication = await this.communicationRepository.findOneBy({ id });
+
+    if (!communication) throw new NotFoundException(`Communication ${id} not found`);
+
+    const { typeId, ...toUpdate } = dto;
+    if (typeId) {
+      const typeCommunication = await this.typeCommunicationRespository.findOneBy({ id: typeId });
       if (!typeCommunication) throw new BadGatewayException('Type communication not found');
-      await this.checkDuplicateCode(props.code);
-      const entity = this.communicationRepository.create({ ...props, type: typeCommunication });
-      return this.communicationRepository.save(entity);
-    } catch (error) {
-      throw new InternalServerErrorException('Error creating communication');
+      communication.type = typeCommunication;
     }
+    return await this.communicationRepository.save({ ...communication, ...toUpdate });
   }
 
-  async listCommunications(opts?: { page?: number; limit?: number; search?: string; from?: string; to?: string }) {
-    const page = Math.max(1, opts?.page ?? 1);
-    const limit = Math.min(100, Math.max(1, opts?.limit ?? 10));
-
-    const qb = this.communicationRepository.createQueryBuilder('c');
-
-    if (opts?.search) {
-      qb.andWhere('(c.titulo ILIKE :s OR c.number_document ILIKE :s)', { s: `%${opts.search}%` });
-    }
-    if (opts?.from) qb.andWhere('c.publication_date >= :from', { from: opts.from });
-    if (opts?.to) qb.andWhere('c.publication_date <= :to', { to: opts.to });
-
-    qb.orderBy('c.publication_date', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
-
-    const [data, total] = await qb.getManyAndCount();
-    return { data, total, page, limit, pages: Math.ceil(total / limit) };
-  }
-
-  // ----- Delete -----
-  async deleteCommunication(id: number) {
-    // const c = await this.getCommunication(id);
-    // await this.commRepo.remove(c);
-    // return { deleted: true };
-  }
-
-  async getLastCommunications(limit = 5) {
+  async getLatest(limit = 5) {
     const communications = await this.communicationRepository.find({ order: { publicationDate: 'DESC' }, take: limit });
     return communications.map((item) => this.plainCommunication(item));
   }
 
-  async getOneCommunication(id: string) {
+  async findPublicPaginated({ limit, offset, term, typeId }: GetPublicCommunicationsDto) {
+    const queryBuilder = this.communicationRepository.createQueryBuilder('c').leftJoinAndSelect('c.type', 'type');
+
+    if (term) {
+      queryBuilder.andWhere('(c.reference ILIKE :term OR c.code ILIKE :term)', { term: `%${term}%` });
+    }
+
+    if (typeId) {
+      queryBuilder.andWhere('c.typeId = :typeId', { typeId });
+    }
+
+    queryBuilder.orderBy('c.publicationDate', 'DESC').skip(offset).take(limit);
+
+    const [communications, total] = await queryBuilder.getManyAndCount();
+    return { communications, total };
+  }
+
+  async getOne(id: string) {
     const communication = await this.communicationRepository.findOne({ where: { id } });
     if (!communication) throw new NotFoundException(`Communication ${id} not found`);
     return this.plainCommunication(communication);

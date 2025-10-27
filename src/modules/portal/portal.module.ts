@@ -3,9 +3,10 @@ import { PortalController } from './portal.controller';
 import { DocumentModule } from '../documents/document.module';
 import { ContentModule } from '../content/content.module';
 import { CommunicationsModule } from '../communications/communications.module';
+import { PortalCommunicationsController } from './controllers';
 
 @Module({
-  controllers: [PortalController],
+  controllers: [PortalController, PortalCommunicationsController],
   imports: [DocumentModule, ContentModule, CommunicationsModule],
 })
 export class PortalModule {}

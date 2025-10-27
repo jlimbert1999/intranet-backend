@@ -29,6 +29,9 @@ export class Communication {
   publicationDate: Date;
 
   @Column()
+  originalName: string;
+
+  @Column()
   fileName: string;
 
   @Column({ nullable: true })
