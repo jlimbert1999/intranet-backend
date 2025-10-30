@@ -27,7 +27,6 @@ export class QuickAccessService {
 
     try {
       await queryRunner.manager.clear(QuickAccess);
-
       const models = items.map((item) => queryRunner.manager.create(QuickAccess, item));
       const result = await queryRunner.manager.save(models);
       await queryRunner.commitTransaction();
@@ -42,6 +41,6 @@ export class QuickAccessService {
 
   private plainQuickAccess(item: QuickAccess) {
     const { icon, ...props } = item;
-    return { ...props, image: icon ? this.fileService.buildFileUrl(icon, FileGroup.QUICK_ACCESS) : null };
+    return { ...props, icon: icon ? this.fileService.buildFileUrl(icon, FileGroup.QUICK_ACCESS) : null };
   }
 }

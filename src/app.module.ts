@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { CommunicationsModule } from './modules/communications/communications.module';
 import { EnvironmentVariables, validate } from './config/env.validation';
 import { DocumentModule } from './modules/documents/document.module';
 import { ContentModule } from './modules/content/content.module';
+import { EventModule } from './modules/events/event.module';
 import { PortalModule } from './modules/portal/portal.module';
 import { FilesModule } from './modules/files/files.module';
-import { CacheModule } from '@nestjs/cache-manager';
-import { CommunicationsModule } from './modules/communications/communications.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { CommunicationsModule } from './modules/communications/communications.mo
     DocumentModule,
     PortalModule,
     CommunicationsModule,
+    EventModule,
   ],
   controllers: [],
   providers: [],

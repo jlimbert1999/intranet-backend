@@ -77,7 +77,7 @@ export class CommunicationService {
     queryBuilder.orderBy('c.publicationDate', 'DESC').skip(offset).take(limit);
 
     const [communications, total] = await queryBuilder.getManyAndCount();
-    return { communications, total };
+    return { communications: communications.map((item) => this.plainCommunication(item)), total };
   }
 
   async getOne(id: string) {
