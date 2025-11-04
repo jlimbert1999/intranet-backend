@@ -109,6 +109,14 @@ export class DocumentService {
     return { documents: documents.map((doc) => this.plainDocument(doc)), total };
   }
 
+  async getMostDownloaded() {
+    return await this.docRepository.find({
+      relations: { sectionCategory: { category: true, section: true } },
+      order: { downloadCount: 'DESC' },
+      take: 8,
+    });
+  }
+
   async incrementDownloadCount(id: string, userIp: string) {
     const cacheKey = `download:${id}:${userIp}`;
 

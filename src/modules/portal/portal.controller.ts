@@ -28,16 +28,18 @@ export class PortalController {
 
   @Get('home')
   async getHomeData() {
-    const [slides, quickAccess, communications] = await Promise.all([
+    const [slides, quickAccess, communications, documents] = await Promise.all([
       this.heroSlideService.findAll(),
       this.quickAccessService.findAll(),
       this.coomunicationService.getLatest(10),
+      this.documentService.getMostDownloaded(),
     ]);
 
     return {
       slides,
       quickAccess,
       communications,
+      documents,
     };
   }
 

@@ -15,6 +15,7 @@ export interface savedFile {
   fileName: string;
   originalName: string;
   type: string;
+  sizeBytes: number;
 }
 
 const FOLDERS: Record<string, string[]> = {
@@ -42,6 +43,7 @@ export class FilesService {
         fileName: savedFileName,
         originalName: decodedOriginalName,
         type: this.getFileType(file.mimetype),
+        sizeBytes: file.size,
       };
     } catch (error) {
       throw new InternalServerErrorException('Error saving file');

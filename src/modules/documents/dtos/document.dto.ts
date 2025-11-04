@@ -3,6 +3,7 @@ import {
   IsArray,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -24,6 +25,10 @@ export class DocumentDto {
   @IsString()
   @IsNotEmpty()
   fileName: string;
+
+  @IsNumber()
+  @Type(() => Number)
+  sizeBytes: number;
 
   @IsInt()
   @Min(2000)
@@ -56,7 +61,6 @@ export class FilterDocumentsDto extends PaginationDto {
   // @IsIn(['asc', 'desc'])
   @IsOptional()
   orderDirection?: OrderDirection = 'DESC';
-
 
   @IsInt()
   @Type(() => Number)
