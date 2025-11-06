@@ -110,11 +110,12 @@ export class DocumentService {
   }
 
   async getMostDownloaded() {
-    return await this.docRepository.find({
+    const docs = await this.docRepository.find({
       relations: { sectionCategory: { category: true, section: true } },
       order: { downloadCount: 'DESC' },
       take: 8,
     });
+    return docs.map((doc) => this.plainDocument(doc));
   }
 
   async incrementDownloadCount(id: string, userIp: string) {
