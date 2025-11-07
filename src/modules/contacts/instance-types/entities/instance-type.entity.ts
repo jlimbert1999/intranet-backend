@@ -1,11 +1,14 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Contact } from '../../entities/contact.entity';
 
-@Schema({ timestamps: true })
-export class InstanceType extends Document {
-  
-  @Prop({ required: true, unique: true, maxlength: 50 })
+@Entity('instance_types')
+export class InstanceType {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ length: 50 })
   name: string;
-}
 
-export const InstanceTypeSchema = SchemaFactory.createForClass(InstanceType);
+  @OneToMany(() => Contact, (contact) => contact.instanceType)
+  contacts: Contact[];
+}

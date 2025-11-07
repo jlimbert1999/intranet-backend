@@ -1,7 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, ILike, Not } from 'typeorm';
 import { InstanceType } from '../entities/instance-type.entity';
 import { CreateInstanceTypeDto } from '../dtos/create-instance-type.dto';
 import { UpdateInstanceTypeDto } from '../dtos/update-instance-type.dto';
@@ -9,43 +8,64 @@ import { UpdateInstanceTypeDto } from '../dtos/update-instance-type.dto';
 @Injectable()
 export class InstanceTypesService {
   constructor(
-    @InjectModel(InstanceType.name) private readonly instanceTypeModel: Model<InstanceType>,
+    @InjectRepository(InstanceType)
+    private readonly repo: Repository<InstanceType>,
   ) {}
 
-  async create(dto: CreateInstanceTypeDto): Promise<InstanceType> {
-    const newType = new this.instanceTypeModel(dto);
-    return newType.save();
+  private normalizeName(name: string) {
+    return name.trim();
   }
 
-  async findAll(): Promise<InstanceType[]> {
-    return this.instanceTypeModel.find().sort({ name: 1 }).exec();
-  }
-  
-  async findOne(id: string): Promise<InstanceType> {
-    const type = await this.instanceTypeModel.findById(id).exec();
-    if (!type) {
-      throw new NotFoundException(`Tipo de institución con ID ${id} no encontrado.`);
+  async create(dto: CreateInstanceTypeDto) {
+    const name = this.normalizeName(dto.name);
+
+    const exists = await this.repo.findOne({
+      where: { name: ILike(name) },
+    });
+
+    if (exists) {
+      throw new BadRequestException(`El tipo de entidad "${dto.name}" ya existe.`);
     }
-    return type;
+
+    const newEntity = this.repo.create({ name });
+    return this.repo.save(newEntity);
   }
 
-  async update(id: string, dto: UpdateInstanceTypeDto): Promise<InstanceType> {
-    const updatedType = await this.instanceTypeModel
-      .findByIdAndUpdate(id, dto, { new: true }) 
-      .exec();
-      
-    if (!updatedType) {
-      throw new NotFoundException(`Tipo de institución con ID ${id} no encontrado.`);
+  async update(id: string, dto: UpdateInstanceTypeDto) {
+    const entity = await this.repo.findOne({ where: { id } });
+    if (!entity) throw new NotFoundException(`Tipo de entidad con id "${id}" no encontrado.`);
+
+    if (dto.name) {
+      const name = this.normalizeName(dto.name);
+
+      const exists = await this.repo.findOne({
+        where: { name: ILike(name), id: Not(id) },
+      });
+
+      if (exists) {
+        throw new BadRequestException(`El tipo de entidad "${dto.name}" ya existe.`);
+      }
+
+      entity.name = name;
     }
-    return updatedType;
+
+    await this.repo.save(entity);
+    return entity;
   }
 
-  async remove(id: string): Promise<any> {
-    
-    const result = await this.instanceTypeModel.deleteOne({ _id: id }).exec();
-    if (result.deletedCount === 0) {
-      throw new NotFoundException(`Tipo de institución con ID ${id} no encontrado.`);
-    }
-    return { deleted: true };
+  async findAll() {
+    return this.repo.find({ order: { name: 'ASC' } });
+  }
+
+  async findOne(id: string) {
+    const entity = await this.repo.findOne({ where: { id } });
+    if (!entity) throw new NotFoundException(`Tipo de entidad con id "${id}" no encontrado.`);
+    return entity;
+  }
+
+  async remove(id: string) {
+    const entity = await this.repo.findOne({ where: { id } });
+    if (!entity) throw new NotFoundException(`Tipo de entidad con id "${id}" no encontrado.`);
+    return this.repo.remove(entity);
   }
 }

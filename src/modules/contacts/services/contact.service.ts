@@ -1,80 +1,104 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, FilterQuery } from 'mongoose';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { Contact } from '../entities/contact.entity';
+import { InstanceType } from '../instance-types/entities/instance-type.entity';
 import { CreateContactDto } from '../dtos/create-contact.dto';
 import { UpdateContactDto } from '../dtos/update-contact.dto';
-import { ContactFilterDto } from '../dtos/contact-filter.dto';
-import { PaginatedResult } from '../interfaces/paginated-result.interface'; 
 
 @Injectable()
 export class ContactsService {
   constructor(
-    @InjectModel(Contact.name) private readonly contactModel: Model<Contact>,
+    @InjectRepository(Contact)
+    private readonly contactRepository: Repository<Contact>,
+
+    @InjectRepository(InstanceType)
+    private readonly instanceTypeRepository: Repository<InstanceType>,
   ) {}
 
   async create(contactDto: CreateContactDto): Promise<Contact> {
-    const newContact = new this.contactModel(contactDto);
-    return newContact.save();
+    const {
+      instanceTypeId,
+      instancia,
+      direccion,
+      jefe,
+      soporte,
+      secretaria,
+      telefonoFijo,
+    } = contactDto;
+
+    const instanceType: InstanceType | null = instanceTypeId
+      ? await this.instanceTypeRepository.findOne({ where: { id: instanceTypeId } })
+      : null;
+
+    if (instanceTypeId && !instanceType) {
+      throw new NotFoundException(`Tipo de instancia con ID ${instanceTypeId} no encontrado.`);
+    }
+
+    const newContact = this.contactRepository.create({
+      instancia,
+      direccion: direccion ?? null,
+      jefe: jefe ?? null,
+      soporte: soporte ?? null,
+      secretaria: secretaria ?? null,
+      telefonoFijo: telefonoFijo ?? null,
+      instanceType: instanceType,
+      instanceTypeId: instanceTypeId ?? null,
+    });
+
+    return this.contactRepository.save(newContact);
   }
 
-  async findAll(filter: ContactFilterDto): Promise<PaginatedResult<Contact>> {
-    const { page = 1, limit = 10, instanceType, search } = filter;
-    const query: FilterQuery<Contact> = {};
-
-    if (instanceType) {
-      query.instanceType = instanceType;
-    }
-
-    if (search) {
-      query.$or = [
-       { instancia: { $regex: search, $options: 'i' } },
-      ];
-    }
-
-    const skip = (page - 1) * limit;
-
-    const [contacts, total] = await Promise.all([
-      this.contactModel
-        .find(query)
-        .populate('instanceType', 'name') 
-        .skip(skip)
-        .limit(limit)
-        .exec(),
-      this.contactModel.countDocuments(query).exec(),
-    ]);
-
-    return { data: contacts, total, page, limit };
+  async findAll(): Promise<Contact[]> {
+    return this.contactRepository.find({
+      relations: ['instanceType'],
+      order: { instancia: 'ASC' },
+    });
   }
 
   async findOne(id: string): Promise<Contact> {
-    const contact = await this.contactModel
-      .findById(id)
-      .populate('instanceType', 'name')
-      .exec();
-    if (!contact) {
-      throw new NotFoundException(`Contacto con ID ${id} no encontrado.`);
-    }
+    const contact = await this.contactRepository.findOne({
+      where: { id },
+      relations: ['instanceType'],
+    });
+
+    if (!contact) throw new NotFoundException(`Contacto con ID ${id} no encontrado.`);
     return contact;
   }
-  
+
   async update(id: string, updateDto: UpdateContactDto): Promise<Contact> {
-    const updatedContact = await this.contactModel
-      .findByIdAndUpdate(id, updateDto, { new: true }) 
-      .exec();
-      
-    if (!updatedContact) {
-      throw new NotFoundException(`Contacto con ID ${id} no encontrado.`);
+    const contact = await this.findOne(id);
+
+    const { instanceTypeId, instancia, direccion, jefe, soporte, secretaria, telefonoFijo } = updateDto;
+
+    if (instanceTypeId !== undefined) {
+      if (instanceTypeId === null) {
+        contact.instanceType = null;
+        contact.instanceTypeId = null;
+      } else {
+        const instanceType: InstanceType | null = await this.instanceTypeRepository.findOne({ where: { id: instanceTypeId } });
+        if (!instanceType) {
+          throw new NotFoundException(`Tipo de instancia con ID ${instanceTypeId} no encontrado.`);
+        }
+        contact.instanceType = instanceType;
+        contact.instanceTypeId = instanceTypeId;
+      }
     }
-    return updatedContact;
+
+    if (instancia !== undefined) contact.instancia = instancia;
+    if (direccion !== undefined) contact.direccion = direccion ?? null;
+    if (jefe !== undefined) contact.jefe = jefe ?? null;
+    if (soporte !== undefined) contact.soporte = soporte ?? null;
+    if (secretaria !== undefined) contact.secretaria = secretaria ?? null;
+    if (telefonoFijo !== undefined) contact.telefonoFijo = telefonoFijo ?? null;
+
+    return this.contactRepository.save(contact);
   }
 
-  async remove(id: string): Promise<any> {
-    const result = await this.contactModel.deleteOne({ _id: id }).exec();
-    if (result.deletedCount === 0) {
-      throw new NotFoundException(`Contacto con ID ${id} no encontrado.`);
-    }
+  async remove(id: string): Promise<{ deleted: boolean }> {
+    const result = await this.contactRepository.delete(id);
+    if (result.affected === 0) throw new NotFoundException(`Contacto con ID ${id} no encontrado.`);
     return { deleted: true };
   }
 }

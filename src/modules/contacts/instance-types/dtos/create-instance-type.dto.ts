@@ -1,9 +1,8 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsString, MinLength, MaxLength } from 'class-validator';
 
 export class CreateInstanceTypeDto {
-  
   @IsString()
-  @IsNotEmpty()
+  @MinLength(3)
   @MaxLength(50)
   name: string;
 }

@@ -32,7 +32,6 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "file-type": "^21.0.0",
-    "mongoose": "^8.19.2",
     "pdf-to-png-converter": "^3.10.0",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",

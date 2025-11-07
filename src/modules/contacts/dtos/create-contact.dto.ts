@@ -1,16 +1,17 @@
-import { IsMongoId, IsNotEmpty, IsOptional, IsString, MaxLength, IsNumber, Min } from 'class-validator';
+import { IsOptional, IsString, IsUUID, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateContactDto {
-  
-  @IsMongoId({ message: 'instanceType debe ser un ID válido de Mongo' })
-  @IsNotEmpty()
-  instanceType: string;
+  @IsOptional()
+  @IsUUID()
+  instanceTypeId?: string;
 
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
   instancia: string;
+
+  @IsOptional()
+  @IsString()
+  direccion?: string;
 
   @IsOptional()
   @Type(() => Number)

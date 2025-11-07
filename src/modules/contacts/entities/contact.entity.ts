@@ -1,32 +1,39 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import * as mongoose from 'mongoose';
-import { Document } from 'mongoose';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { InstanceType } from '../instance-types/entities/instance-type.entity';
 
-@Schema({ timestamps: true })
-export class Contact extends Document {
+@Entity('contacts')
+export class Contact {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Prop({ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'InstanceType', 
-    required: true,
-  })
-  instanceType: InstanceType; 
-
-  @Prop({ required: true, maxlength: 100 })
+  @Column({ type: 'varchar', length: 100, nullable: false })
   instancia: string;
 
-  @Prop({ type: Number, default: null })
-  jefe: number | null;
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  direccion?: string | null;
 
-  @Prop({ type: Number, default: null })
-  soporte: number | null;
+  @Column({ type: 'bigint', nullable: true })
+  jefe?: number | null;
 
-  @Prop({ type: Number, default: null })
-  secretaria: number | null;
+  @Column({ type: 'bigint', nullable: true })
+  soporte?: number | null;
 
-  @Prop({ type: Number, default: null })
-  telefonoFijo: number | null;
+  @Column({ type: 'bigint', nullable: true })
+  secretaria?: number | null;
+
+  @Column({ type: 'bigint', name: 'telefono_fijo', nullable: true })
+  telefonoFijo?: number | null;
+
+  @ManyToOne(() => InstanceType, { nullable: true, eager: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'instance_type_id' })
+  instanceType?: InstanceType | null;
+
+  @Column({ name: 'instance_type_id', type: 'uuid', nullable: true })
+  instanceTypeId?: string | null;
 }
-
-export const ContactSchema = SchemaFactory.createForClass(Contact);

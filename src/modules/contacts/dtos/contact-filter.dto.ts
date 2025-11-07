@@ -1,8 +1,8 @@
-import { IsMongoId, IsInt, IsOptional, IsString, Min } from 'class-validator';
+// src/modules/contacts/dtos/contact-filter.dto.ts
+import { IsOptional, IsString, IsInt, Min, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ContactFilterDto {
-  
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -16,7 +16,7 @@ export class ContactFilterDto {
   limit?: number = 10;
 
   @IsOptional()
-  @IsMongoId({ message: 'El filtro instanceType debe ser un ID válido de Mongo' })
+  @IsUUID('4', { message: 'El filtro instanceType debe ser un UUID válido' })
   instanceType?: string;
 
   @IsOptional()

@@ -1,57 +1,58 @@
+// Archivo: src/config/env.validation.ts (Modificado para PostgreSQL)
+
 import { plainToInstance } from 'class-transformer';
 import { IsNumber, IsString, validateSync, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer'; // Necesario para IsNumber si no lo tienes
+import { Type } from 'class-transformer';
 
 
 export class EnvironmentVariables {
-  
-  // VARIABLES DE APLICACIÓN
-  @Type(() => Number) // Es necesario convertir el string del .env a número
-  @IsNumber()
-  PORT: number;
+ 
+ // VARIABLES DE APLICACIÓN
+ @Type(() => Number)
+ @IsNumber()
+ PORT: number;
 
-  @IsString()
-  HOST: string;
+ @IsString()
+ HOST: string;
 
-  // ⬇️ SOLUCIÓN: Usamos la URL completa para MongoDB
-  @IsString()
-  DATABASE_URL: string;
-  
-  // ❌ LAS SIGUIENTES PROPIEDADES FUERON ELIMINADAS O COMENTADAS
-  //    PORQUE YA NO SON USADAS POR MONGOOSE EN EL APP.MODULE.TS
+ // ❌ ELIMINADA la validación de DATABASE_URL (MongoDB)
+ // @IsString()
+ // DATABASE_URL: string;
+ 
+ // ✅ AGREGADAS las propiedades individuales de POSTGRESQL
+ 
+ @IsString()
+ DATABASE_HOST: string;
 
-  /*
-  @IsString()
-  DATABASE_HOST: string;
+ @Type(() => Number)
+ @IsNumber()
+ DATABASE_PORT: number;
 
-  @Type(() => Number)
-  @IsNumber()
-  DATABASE_PORT: number;
+ @IsString()
+ DATABASE_NAME: string;
 
-  @IsString()
-  DATABASE_NAME: string;
-
-  @IsString()
-  DATABASE_USER: string;
-  
-  @IsString() // ⬅️ Tipo corregido
-  DATABASE_PASSWORD: string; 
-  */
-
-  // ⚠️ Nota: Si tu proyecto base aún usa otras variables, déjalas,
-  // pero asegúrate de que tengan un valor en .env o sean @IsOptional().
+ @IsString()
+ DATABASE_USER: string;
+ 
+ @IsString()
+ DATABASE_PASSWORD: string; 
+ 
+    // Asegúrate de incluir aquí el resto de variables que usa tu app (JWT_KEY, MAIL_HOST, etc.)
+    @IsString()
+    JWT_KEY: string;
+    // ... otras variables ...
 }
 
 export function validate(config: Record<string, unknown>) {
- const validatedConfig = plainToInstance(EnvironmentVariables, config, {
- enableImplicitConversion: true,
- });
- const errors = validateSync(validatedConfig, {
+const validatedConfig = plainToInstance(EnvironmentVariables, config, {
+enableImplicitConversion: true,
+});
+const errors = validateSync(validatedConfig, {
 skipMissingProperties: false,
- });
+});
 
- if (errors.length > 0) {
- throw new Error(errors.toString());
- }
- return validatedConfig;
+if (errors.length > 0) {
+throw new Error(errors.toString());
+}
+return validatedConfig;
 }

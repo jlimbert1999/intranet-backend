@@ -1,8 +1,4 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateInstanceTypeDto } from './create-instance-type.dto';
 
-export class UpdateInstanceTypeDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  name?: string;
-}
+export class UpdateInstanceTypeDto extends PartialType(CreateInstanceTypeDto) {}
