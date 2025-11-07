@@ -19,11 +19,15 @@ export class CustomFileTypeValidator extends FileValidator {
     const detected = await fileTypeFromBuffer(file.buffer);
 
     if (!detected) return false;
+    
+    console.log(this.allowedMimes);
+    console.log(detected.mime);
 
     return this.allowedMimes.includes(detected.mime);
   }
 
   buildErrorMessage(file: Express.Multer.File): string {
+    // console.log("eror con",file);
     return `File "${file.originalname}" is not valid.`;
   }
 }

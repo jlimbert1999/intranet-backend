@@ -10,6 +10,7 @@ import { ContentModule } from './modules/content/content.module';
 import { EventModule } from './modules/events/event.module';
 import { PortalModule } from './modules/portal/portal.module';
 import { FilesModule } from './modules/files/files.module';
+import { AssistanceModule } from './modules/assistance/assistance.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { FilesModule } from './modules/files/files.module';
     PortalModule,
     CommunicationsModule,
     EventModule,
+    AssistanceModule,
   ],
   controllers: [],
   providers: [],
