@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { TutorialVideo } from './tutorial-topic.entiry';
 
-@Entity('assistance_tutorials')
+@Entity('tutorials')
 export class Tutorial {
   @PrimaryGeneratedColumn('uuid')
   id: string;

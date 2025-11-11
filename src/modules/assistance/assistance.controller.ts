@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+
 import { AssistanceService } from './assistance.service';
 import { CreateTutorialDto } from './dtos/tutorial.dto';
+import { PaginationDto } from '../common';
 
 @Controller('assistance')
 export class AssistanceController {
@@ -10,8 +12,13 @@ export class AssistanceController {
     return this.assistanceService.create(body);
   }
 
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() body: CreateTutorialDto) {
+    return this.assistanceService.update(id, body);
+  }
+
   @Get()
-  findAll() {
-    return this.assistanceService.findAll();
+  findAll(@Query() queryParams: PaginationDto) {
+    return this.assistanceService.findAll(queryParams);
   }
 }

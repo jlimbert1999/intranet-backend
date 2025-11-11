@@ -1,3 +1,4 @@
+import { PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import { ArrayMinSize, IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 
@@ -9,11 +10,6 @@ export class VideoItemDto {
   @IsString()
   @IsNotEmpty()
   fileName: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @IsOptional()
-  thumbnailName?: string;
 }
 
 export class CreateTutorialDto {
@@ -32,3 +28,5 @@ export class CreateTutorialDto {
   @IsOptional()
   description?: string;
 }
+
+export class UpdateTutorialDto extends PartialType(CreateTutorialDto) {}

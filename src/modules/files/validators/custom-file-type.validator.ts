@@ -1,6 +1,6 @@
 import { FileValidator } from '@nestjs/common';
 import { fileTypeFromBuffer } from 'file-type';
-import { lookup as mimeLookup } from 'mime-types';
+import { getMimeType } from 'src/helpers';
 
 interface ValidatorConfig {
   validTypes: string[];
@@ -10,7 +10,7 @@ export class CustomFileTypeValidator extends FileValidator {
 
   constructor(config: ValidatorConfig) {
     super(config);
-    this.allowedMimes = config.validTypes.map((type) =>  type.includes('/') ? type : mimeLookup(type) || type);
+    this.allowedMimes = config.validTypes.map((type) => (type.includes('/') ? type : getMimeType(type) || type));
   }
 
   async isValid(file?: Express.Multer.File): Promise<boolean> {
@@ -19,15 +19,11 @@ export class CustomFileTypeValidator extends FileValidator {
     const detected = await fileTypeFromBuffer(file.buffer);
 
     if (!detected) return false;
-    
-    console.log(this.allowedMimes);
-    console.log(detected.mime);
 
     return this.allowedMimes.includes(detected.mime);
   }
 
   buildErrorMessage(file: Express.Multer.File): string {
-    // console.log("eror con",file);
     return `File "${file.originalname}" is not valid.`;
   }
 }

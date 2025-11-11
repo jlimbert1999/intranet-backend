@@ -24,7 +24,6 @@ export class PortalCommunicationsController {
 
   @Get()
   findAll(@Query() queryParams: GetPublicCommunicationsDto) {
-    console.log("gettin data");
     return this.coomunicationService.findPublicPaginated(queryParams);
   }
 }

@@ -6,7 +6,7 @@ import { extname, join } from 'path';
 import { v4 as uuid } from 'uuid';
 import { existsSync } from 'fs';
 
-import { generatePdfThumbnail, generateVideoThumbnail } from 'src/helpers';
+import { generatePdfThumbnail } from 'src/helpers';
 import { EnvironmentVariables } from 'src/config';
 import { GetFileDto } from './dtos/get-file.dto';
 import { FileGroup } from './file-group.enum';
@@ -76,7 +76,7 @@ export class FilesService {
     }
   }
 
-  async saveVideoWithThumbnail(file: Express.Multer.File, group: FileGroup) {
+  async saveVideo(file: Express.Multer.File, group: FileGroup) {
     try {
       const { filePath, savedFileName } = await this.buildSavePathFile(file, group);
 
@@ -84,15 +84,17 @@ export class FilesService {
 
       const groupPath = join(this.BASE_UPLOAD_PATH, group);
 
-      const videoDir = join(groupPath, 'images');
+      const videoDir = join(groupPath, 'videos');
 
       await this.ensureFolderExists(videoDir);
 
-      const thumbnailName = await generateVideoThumbnail(filePath, videoDir);
+      const decodedOriginalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
 
       return {
         fileName: savedFileName,
-        thumbnailName,
+        originalName: decodedOriginalName,
+        type: this.getFileType(file.mimetype),
+        sizeBytes: file.size,
       };
     } catch (error) {
       throw new InternalServerErrorException('Error saving pdf file');

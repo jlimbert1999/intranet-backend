@@ -10,5 +10,6 @@ import { FilesModule } from '../files/files.module';
   controllers: [AssistanceController],
   providers: [AssistanceService],
   imports: [TypeOrmModule.forFeature([Tutorial, TutorialVideo]), FilesModule],
+  exports: [AssistanceService],
 })
 export class AssistanceModule {}

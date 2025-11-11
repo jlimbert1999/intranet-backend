@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, ILike, In, Repository } from 'typeorm';
 
-import { CreateTutorialDto } from './dtos/tutorial.dto';
+import { CreateTutorialDto, UpdateTutorialDto } from './dtos/tutorial.dto';
 import { Tutorial, TutorialVideo } from './entities';
 import { FilesService } from '../files/files.service';
 import { FileGroup } from '../files/file-group.enum';
+import { PaginationDto } from '../common';
 
 @Injectable()
 export class AssistanceService {
@@ -13,6 +14,7 @@ export class AssistanceService {
     @InjectRepository(Tutorial) private tutorialRepository: Repository<Tutorial>,
     @InjectRepository(TutorialVideo) private videoRepository: Repository<TutorialVideo>,
     private fileService: FilesService,
+    private dataSource: DataSource,
   ) {}
 
   async create(dto: CreateTutorialDto) {
@@ -28,17 +30,50 @@ export class AssistanceService {
     return this.plainTutorial(tutorial);
   }
 
-  async findAll() {
-    return { tutorials: [], total: 0 };
+  async update(id: string, dto: UpdateTutorialDto) {
+    const tutorial = await this.tutorialRepository.findOneBy({ id });
+
+    if (!tutorial) throw new BadRequestException(`Ttorial ${id} not found`);
+
+    const { videos, ...toUpdate } = dto;
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      if (videos) {
+        await queryRunner.manager.delete(TutorialVideo, { tutorial: { id } });
+        tutorial.videos = videos.map((video) => this.videoRepository.create(video));
+      }
+      const updatedTutorial = this.tutorialRepository.merge(tutorial, toUpdate);
+      await queryRunner.manager.save(tutorial);
+      await queryRunner.commitTransaction();
+      return this.plainTutorial(tutorial);
+    } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
+      throw new InternalServerErrorException(`Failed to update tutorial ${id}`);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async findAll({ term, limit, offset }: PaginationDto) {
+    const [tutorials, total] = await this.tutorialRepository.findAndCount({
+      ...(term && { where: { title: ILike(`%${term}%`) } }),
+      take: limit,
+      skip: offset,
+    });
+    return { tutorials: tutorials.map((item) => this.plainTutorial(item)), total };
   }
 
   private plainTutorial(tutorial: Tutorial) {
     const { videos, ...rest } = tutorial;
     return {
-      videos: videos.map(({ fileName, thumbnailName, ...proos }) => ({
+      videos: videos.map(({ fileName, ...proos }) => ({
         ...proos,
         fileUrl: this.fileService.buildFileUrl(fileName, FileGroup.ASSISTANCE),
-        thumbnailUrl: thumbnailName ? this.fileService.buildFileUrl(thumbnailName, FileGroup.ASSISTANCE) : null,
       })),
       ...rest,
     };

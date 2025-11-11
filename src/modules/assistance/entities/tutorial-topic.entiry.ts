@@ -12,9 +12,6 @@ export class TutorialVideo {
   @Column()
   fileName: string;
 
-  @Column({ nullable: true })
-  thumbnailName?: string;
-
   @ManyToOne(() => Tutorial, (tutorial) => tutorial.videos, { onDelete: 'CASCADE' })
   tutorial: Tutorial;
 }

@@ -66,7 +66,7 @@ export class FilesController {
     return this.filesService.saveFile(file, FileGroup.QUICK_ACCESS);
   }
 
-  @Post('tutorial')
+  @Post('tutorial-video')
   @UseInterceptors(FileInterceptor('file'))
   uploadTutorialVideo(
     @UploadedFile(
@@ -83,7 +83,27 @@ export class FilesController {
     )
     file: Express.Multer.File,
   ) {
-    return this.filesService.saveVideoWithThumbnail(file, FileGroup.ASSISTANCE);
+    return this.filesService.saveVideo(file, FileGroup.ASSISTANCE);
+  }
+
+  @Post('tutorial-image')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadTutorialImage(
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addValidator(
+          new CustomFileTypeValidator({
+            validTypes: ['jpg', 'jpeg', 'png'],
+          }),
+        )
+        .addMaxSizeValidator({
+          maxSize: 5 * 1024 * 1024,
+        })
+        .build(),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.filesService.saveFile(file, FileGroup.ASSISTANCE);
   }
 
   @Post('communication')
