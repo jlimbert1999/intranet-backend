@@ -3,8 +3,8 @@ import { Tutorial } from './tutorial.entity';
 
 @Entity('tutorial_videos')
 export class TutorialVideo {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column()
   title: string;

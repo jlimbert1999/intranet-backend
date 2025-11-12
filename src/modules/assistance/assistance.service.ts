@@ -1,6 +1,8 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, ILike, In, Repository } from 'typeorm';
+
+import slugify from 'slugify';
 
 import { CreateTutorialDto, UpdateTutorialDto } from './dtos/tutorial.dto';
 import { Tutorial, TutorialVideo } from './entities';
@@ -68,9 +70,16 @@ export class AssistanceService {
     return { tutorials: tutorials.map((item) => this.plainTutorial(item)), total };
   }
 
+  async findBySlug(slug: string) {
+    const tutorail = await this.tutorialRepository.findOne({ where: { slug } });
+    if (!tutorail) throw new NotFoundException(`Tutorail with ${slug} not found`);
+    return this.plainTutorial(tutorail);
+  }
+
   private plainTutorial(tutorial: Tutorial) {
-    const { videos, ...rest } = tutorial;
+    const { videos, image, ...rest } = tutorial;
     return {
+      imageUrl: image ? this.fileService.buildFileUrl(image, FileGroup.ASSISTANCE) : null,
       videos: videos.map(({ fileName, ...proos }) => ({
         ...proos,
         fileUrl: this.fileService.buildFileUrl(fileName, FileGroup.ASSISTANCE),
