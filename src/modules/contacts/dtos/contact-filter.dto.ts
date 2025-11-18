@@ -1,4 +1,3 @@
-// src/modules/contacts/dtos/contact-filter.dto.ts
 import { IsOptional, IsString, IsInt, Min, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 
