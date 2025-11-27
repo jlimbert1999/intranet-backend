@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, Query, Delete, Param, Patch } from '@nestjs/common';
 import { CalendarService } from '../services/calendar.service';
 import { CreateEventDto } from '../dtos/create-event.dto'; // Importar el DTO real
-import { CalendarEvent } from '../entities/calendar-event.entity'; // Importar la entidad real
+import { CalendarEvent } from '../entities/calendar-event.entity'; 
 
 @Controller('calendar') 
 export class CalendarController {
