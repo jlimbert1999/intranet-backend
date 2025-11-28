@@ -11,6 +11,7 @@ import { EventModule } from './modules/events/event.module';
 import { PortalModule } from './modules/portal/portal.module';
 import { FilesModule } from './modules/files/files.module';
 import { AssistanceModule } from './modules/assistance/assistance.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AssistanceModule } from './modules/assistance/assistance.module';
     CommunicationsModule,
     EventModule,
     AssistanceModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],
