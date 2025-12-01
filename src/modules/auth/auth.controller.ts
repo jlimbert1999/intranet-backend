@@ -55,7 +55,7 @@ export class AuthController {
     return this.authService.remove(+id);
   }
 
-  @Get('me')
+  @Get('test/me')
   @UseGuards(AuthGuardGuard)
   async me(@Req() req: Request) {
     // Aquí ya tienes req.user proveniente del access_token del IdentityHub

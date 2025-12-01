@@ -28,13 +28,17 @@ export class AuthService {
     return `This action removes a #${id} auth`;
   }
 
-  async handleOAuthCallback(code: string):Promise<any> {
+  async handleOAuthCallback(code: string): Promise<any> {
     const response = await lastValueFrom(
-      this.httpService.post('http://localhost:3000/auth/exchange', {
+      this.httpService.post('http://localhost:8000/auth/exchange', {
         code,
         client_id: 'intranet',
       }),
     );
     return response.data;
+  }
+
+  verifyAccess(token: string) {
+    return this.jwt.verify(token);
   }
 }
