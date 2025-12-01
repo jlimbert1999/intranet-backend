@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 
 import { CreateAuthDto } from './dto/create-auth.dto';
@@ -38,7 +38,42 @@ export class AuthService {
     return response.data;
   }
 
-  verifyAccess(token: string) {
-    return this.jwt.verify(token);
+ 
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const request = this.httpService.post<{ accessToken: string; refreshToken: string }>(
+        'http://localhost:8000/auth/refresh',
+        {
+          refreshToken,
+          client_id: 'intranet',
+        },
+      );
+      return await lastValueFrom(request);
+    } catch (error) {
+      console.log('Refresh failed', error);
+      throw new UnauthorizedException();
+    }
+  }
+
+  async refreshTokens(refreshToken: string) {
+    try {
+      const request = this.httpService.post<{ accessToken: string; refreshToken: string }>(
+        'http://localhost:8000/auth/refresh',
+        {
+          refreshToken,
+          client_id: 'intranet',
+        },
+        { timeout: 5000 },
+      );
+      const res = await lastValueFrom(request);
+
+      return {
+        accessToken: res.data.accessToken,
+        refreshToken: res.data.refreshToken,
+      };
+    } catch (e) {
+      throw new UnauthorizedException();
+    }
   }
 }

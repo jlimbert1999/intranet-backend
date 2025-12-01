@@ -57,16 +57,7 @@ export class AuthController {
 
   @Get('test/me')
   @UseGuards(AuthGuardGuard)
-  async me(@Req() req: Request) {
-    // Aquí ya tienes req.user proveniente del access_token del IdentityHub
-    const identityId = req['user'] as any; // "sub" = user.id del IdentityHub
-    console.log(identityId);
-
-    // Ahora buscar el "shadow user" local de este sistema
-
-    return {
-      ok: true,
-      user: 'user',
-    };
+  me(@Req() req: Request) {
+    return req['user'] as any;
   }
 }
