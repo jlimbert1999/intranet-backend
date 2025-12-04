@@ -1,4 +1,4 @@
-import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Permission } from './permission.entity';
 import { User } from './user.entity';
@@ -22,4 +22,7 @@ export class Role {
   // N:N → un rol puede aplicarse a varios usuarios
   @ManyToMany(() => User, (user) => user.roles)
   users: User[];
+
+  @CreateDateColumn()
+  createdAt: Date;
 }

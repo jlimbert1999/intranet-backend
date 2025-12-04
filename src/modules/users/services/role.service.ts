@@ -1,9 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { ILike, In, Repository } from 'typeorm';
 
+import { CreateRoleDto, UpdateRoleDto } from '../dtos';
+import { PaginationDto } from 'src/modules/common';
 import { Permission, Role } from '../entities';
-import { CreateRoleDto } from '../dtos';
 
 @Injectable()
 export class RoleService {
@@ -13,7 +14,7 @@ export class RoleService {
   ) {}
 
   async create(roleDto: CreateRoleDto) {
-    const { name, permissionIds } = roleDto;
+    const { permissionIds, ...toCreateProps } = roleDto;
 
     const permissions = await this.permissionRepository.find({ where: { id: In(permissionIds) } });
 
@@ -23,11 +24,27 @@ export class RoleService {
     }
 
     const role = this.roleRepository.create({
-      name,
+      ...toCreateProps,
       permissions,
     });
 
     return await this.roleRepository.save(role);
+  }
+
+  async update(id: string, roleDto: UpdateRoleDto) {
+    const role = await this.roleRepository.findOne({
+      where: { id },
+      relations: ['permissions'],
+    });
+    if (!role) throw new NotFoundException(`Role with id ${id} not found`);
+
+    if (roleDto.permissionIds !== undefined) {
+      const newPermissions = await this.permissionRepository.findBy({
+        id: In(roleDto.permissionIds),
+      });
+      role.permissions = newPermissions;
+    }
+    return await this.roleRepository.save({ ...role, ...roleDto });
   }
 
   async getGroupedPermissions() {
@@ -50,5 +67,23 @@ export class RoleService {
       resource,
       actions,
     }));
+  }
+
+  async findAll(paginatioDto: PaginationDto) {
+    const { limit, offset, term } = paginatioDto;
+    const [roles, total] = await this.roleRepository.findAndCount({
+      relations: { permissions: true },
+      skip: offset,
+      take: limit,
+      ...(term && {
+        where: {
+          name: ILike(`%${term}%`),
+        },
+      }),
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+    return { roles, total };
   }
 }
