@@ -5,6 +5,7 @@ import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from 'src/config';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   controllers: [AuthController],
@@ -19,6 +20,7 @@ import { EnvironmentVariables } from 'src/config';
       }),
       inject: [ConfigService],
     }),
+    UsersModule,
   ],
 })
 export class AuthModule {}

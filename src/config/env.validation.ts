@@ -25,6 +25,9 @@ export class EnvironmentVariables {
 
   @IsString()
   JWT_KEY: string;
+
+  @IsString()
+  IDENTITY_HUB_URL: string;
 }
 
 export function validate(config: Record<string, unknown>) {

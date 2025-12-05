@@ -31,6 +31,9 @@ export class User {
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  externalKey: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -4,7 +4,7 @@ import { IsNotEmpty, IsString, IsEnum, IsOptional, IsBoolean, ArrayMinSize, IsAr
 export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
-  fullname: string;
+  fullName: string;
 
   @IsNotEmpty()
   @IsString()
