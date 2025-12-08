@@ -62,6 +62,10 @@ export class UsersService {
     return this._removePasswordField(updatedUser);
   }
 
+  async findUserByExternalKey(externalKey: string) {
+    return this.userRepository.findOneBy({ externalKey });
+  }
+
   private async encryptPassword(password: string): Promise<string> {
     const saltRounds = 10;
     const salt = await bcrypt.genSalt(saltRounds);

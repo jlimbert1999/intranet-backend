@@ -28,6 +28,9 @@ export class EnvironmentVariables {
 
   @IsString()
   IDENTITY_HUB_URL: string;
+
+  @IsString()
+  CLIENT_KEY: string;
 }
 
 export function validate(config: Record<string, unknown>) {
