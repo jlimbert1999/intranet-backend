@@ -22,12 +22,14 @@ export class AuthService {
   ) {}
 
   async handleOAuthCallback(code: string): Promise<any> {
+    console.log(code);
     const response = await lastValueFrom(
       this.httpService.post('http://localhost:8000/auth/exchange', {
         code,
         client_id: 'intranet',
       }),
     );
+    console.log(response.data);
     return response.data;
   }
 
@@ -71,5 +73,18 @@ export class AuthService {
       }
       throw new InternalServerErrorException('Login can"t be completed at the moment');
     }
+  }
+
+  buildAuthorizeUrl(): string {
+    const idp: string = this.configService.getOrThrow('IDENTITY_HUB_URL');
+    const clientId: string = this.configService.getOrThrow('CLIENT_KEY');
+    const redirect: string = this.configService.getOrThrow('CLIENT_REDIRECT');
+
+    const url = new URL(`${idp}/auth/authorize`);
+    url.searchParams.set('client_id', clientId);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('redirect_uri', redirect);
+    url.searchParams.set('scope', 'openid profile email');
+    return url.toString();
   }
 }

@@ -12,29 +12,38 @@ export class AuthController {
 
   @Get('callback')
   async callback(@Query('code') code: string, @Res({ passthrough: true }) res: Response) {
+    console.log(code);
     const data = await this.authService.handleOAuthCallback(code);
     const { accessToken, refreshToken, user } = data;
 
     res.cookie('intranet_access', accessToken, {
       httpOnly: true,
-      secure: true,
+      secure: false,
       sameSite: 'lax',
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie('intranet_refresh', refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: false,
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
-    return res.redirect('http://localhost:4200/admin');
+    console.log("set lgo");
+    // return res.redirect('http://localhost:4200/admin');
   }
 
   @Get('status')
   @UseGuards(AuthGuard)
   checkAuthStatus(@Req() req: Request) {
+    console.log("paso");
     return req['user'] as any;
+  }
+
+  @Get('test')
+  test(@Res() response: Response) {
+    const authUrl = this.authService.buildAuthorizeUrl();
+    return response.redirect(authUrl);
   }
 
   @Post('login')

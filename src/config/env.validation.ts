@@ -31,6 +31,9 @@ export class EnvironmentVariables {
 
   @IsString()
   CLIENT_KEY: string;
+
+  @IsString()
+  CLIENT_REDIRECT: string;
 }
 
 export function validate(config: Record<string, unknown>) {
