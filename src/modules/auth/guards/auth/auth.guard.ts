@@ -35,17 +35,18 @@ export class AuthGuard implements CanActivate {
 
     const user = await this.authenticateUser(accessToken, refreshToken, response);
     request['user'] = user;
+    console.log(user);
     return true;
   }
 
   private async authenticateUser(accessToken: string | undefined, refreshToken: string | undefined, res: Response) {
+    console.log("EXCEN CUAR");
     if (accessToken) {
-      console.log('CHECK ACCCES TOOKEN');
+      console.log(accessToken);
       const user = await this.tryAccessToken(accessToken);
-      console.log('USER CHECK RESULT', user);
       if (user) return user;
     }
-
+    console.log("fisn");
     if (refreshToken) {
       console.log('CHECK REFERSH TOKEN');
       const result = await this.tryRefreshToken(refreshToken, res);
@@ -58,7 +59,8 @@ export class AuthGuard implements CanActivate {
   private async tryAccessToken(accessToken: string) {
     try {
       const payload = await this.jwtService.verifyAsync<AccessTokenPayload>(accessToken);
-      this.checkClientKey(payload.clientKey);
+      console.log(payload);
+      // this.checkClientKey(payload.clientKey);
       return this.loadUser(payload.externalKey);
     } catch (error: unknown) {
       if (error instanceof HttpException) throw error;

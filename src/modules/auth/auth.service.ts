@@ -29,7 +29,6 @@ export class AuthService {
         client_id: 'intranet',
       }),
     );
-    console.log(response.data);
     return response.data;
   }
 
