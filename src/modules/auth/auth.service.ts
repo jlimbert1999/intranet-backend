@@ -16,25 +16,28 @@ import { AxiosError } from 'axios';
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly httpService: HttpService,
+    private readonly http: HttpService,
     @InjectRepository(User) private userRepository: Repository<User>,
     private configService: ConfigService<EnvironmentVariables>,
   ) {}
 
-  async handleOAuthCallback(code: string): Promise<any> {
-    console.log(code);
+  async handleOAuthCallback(code: string): Promise<{ access_token: string; refresh_token: string }> {
+    //  const tokenEndpoint = `${this.configService.get('IDENTITY_HUB_URL')}/auth/token`;
+    // TODO replace for env url
     const response = await lastValueFrom(
-      this.httpService.post('http://localhost:8000/auth/exchange', {
+      this.http.post('http://localhost:8000/auth/token', {
         code,
-        client_id: 'intranet',
+        client_id: this.configService.getOrThrow<string>('CLIENT_KEY'),
+        redirect_uri: 'http://localhost:3000/auth/callback',
       }),
     );
+
     return response.data;
   }
 
   async refreshToken(refreshToken: string) {
     try {
-      const request = this.httpService.post<{ accessToken: string; refreshToken: string }>(
+      const request = this.http.post<{ accessToken: string; refreshToken: string }>(
         'http://localhost:8000/auth/refresh',
         {
           refreshToken,
@@ -50,7 +53,7 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string) {
     const authRefreshUrl = `${this.configService.get('IDENTITY_HUB_URL')}/auth/refresh`;
-    const request = this.httpService.post<RefreshTokenResult>(authRefreshUrl, { refreshToken }, { timeout: 5000 });
+    const request = this.http.post<RefreshTokenResult>(authRefreshUrl, { refreshToken }, { timeout: 5000 });
     const result = await lastValueFrom(request);
     return result.data;
   }
@@ -60,7 +63,7 @@ export class AuthService {
       const authUrl = `${this.configService.get('IDENTITY_HUB_URL')}/auth/direct-login`;
 
       const result = await lastValueFrom(
-        this.httpService.post<DirectLoginResult>(authUrl, { login, password, clientKey: 'intranet' }),
+        this.http.post<DirectLoginResult>(authUrl, { login, password, clientKey: 'intranet' }),
       );
       const { accessToken, refreshToken } = result.data;
       console.log(result.data);
@@ -75,15 +78,16 @@ export class AuthService {
   }
 
   buildAuthorizeUrl(): string {
-    const idp: string = this.configService.getOrThrow('IDENTITY_HUB_URL');
-    const clientId: string = this.configService.getOrThrow('CLIENT_KEY');
-    const redirect: string = this.configService.getOrThrow('CLIENT_REDIRECT');
+    const idpUrl = this.configService.getOrThrow<string>('IDENTITY_HUB_URL'); // http://localhost:8000
+    const clientId = this.configService.getOrThrow<string>('CLIENT_KEY'); // intranet
+    const redirectUri = this.configService.getOrThrow<string>('CLIENT_REDIRECT'); // http://localhost:3000/auth/callback
 
-    const url = new URL(`${idp}/auth/authorize`);
-    url.searchParams.set('client_id', clientId);
-    url.searchParams.set('response_type', 'code');
-    url.searchParams.set('redirect_uri', redirect);
-    url.searchParams.set('scope', 'openid profile email');
-    return url.toString();
+    const authorizeUrl = new URL(`${idpUrl}/auth/authorize`);
+    authorizeUrl.searchParams.set('client_id', clientId);
+    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
+    authorizeUrl.searchParams.set('response_type', 'code');
+    authorizeUrl.searchParams.set('scope', 'openid profile email');
+    authorizeUrl.searchParams.set('state', redirectUri); // opcional pero recomendado
+    return authorizeUrl.toString();
   }
 }

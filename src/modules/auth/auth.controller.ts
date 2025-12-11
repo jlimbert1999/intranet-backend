@@ -5,58 +5,71 @@ import { UpdateAuthDto } from './dto/update-auth.dto';
 import type { Request, Response } from 'express';
 import { AuthGuard } from './guards/auth/auth.guard';
 import { LoginDto } from './dtos';
+import { ConfigService } from '@nestjs/config';
+import { EnvironmentVariables } from 'src/config';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private configService: ConfigService<EnvironmentVariables>,
+  ) {}
+
+  @Get('login')
+  login(@Res() response: Response, @Query('returnUrl') returnUrl: string) {
+    console.log('🔐 GET /auth/login - Iniciando flujo OAuth');
+
+    // Guardar returnUrl para después del callback
+    // if (returnUrl) {
+    //   response.cookie('return_url', returnUrl, {
+    //     httpOnly: true,
+    //     maxAge: 5 * 60 * 1000,
+    //   });
+    // }
+
+    const authorizeUrl = this.authService.buildAuthorizeUrl();
+
+    console.log(`➡️ Redirigiendo a: ${authorizeUrl.toString()}`);
+
+    // ↓ REDIRECT 2: Backend Cliente → Identity Hub Backend
+    return response.redirect(authorizeUrl);
+  }
 
   @Get('callback')
-  async callback(@Query('code') code: string, @Res({ passthrough: true }) res: Response) {
-    const data = await this.authService.handleOAuthCallback(code);
-    const { accessToken, refreshToken, user } = data;
-    console.log(data);
+  async callback(@Query('code') code: string, @Query('state') state: string, @Res() response: Response) {
+    console.log(`✅ GET /auth/callback - code: ${code?.substring(0, 10)}...`);
 
-    res.cookie('intranet_access', accessToken, {
+    if (!code) {
+      return response.status(400).send('Authorization code missing');
+    }
+
+    const tokens = await this.authService.handleOAuthCallback(code);
+    console.log(tokens);
+
+    // Guardar cookies del SP
+    response.cookie('intranet_access', tokens.access_token, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
+      sameSite: 'lax', // en dev
+      secure: false, // en dev
       maxAge: 15 * 60 * 1000,
     });
 
-    res.cookie('intranet_refresh', refreshToken, {
+    response.cookie('intranet_refresh', tokens.refresh_token, {
       httpOnly: true,
-      secure: false,
       sameSite: 'lax',
+      secure: false,
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
-    return res.redirect('http://localhost:4200/admin');
+
+    // Redirigir al frontend del SP
+    console.log(state);
+    // const redirectTo = state || 'http://localhost:4200/admin';
+    return response.redirect('http://localhost:4200/admin');
   }
 
   @Get('status')
   @UseGuards(AuthGuard)
   checkAuthStatus(@Req() req: Request) {
-    return req['user'] as any;
-  }
-
-  @Get('test')
-  test(@Res() response: Response) {
-    const authUrl = this.authService.buildAuthorizeUrl();
-    return response.redirect(authUrl);
-  }
-
-  @Get('login')
-  login(@Res() res: Response, @Query('returnUrl') returnUrl = '/admin') {
-    const clientId = this.configService.ge('CLIENT_ID');
-    const redirectUri = this.configService.get('REDIRECT_URI');
-    const idpBase = this.configService.get('IDENTITY_HUB_URL');
-
-    const authorizeUrl = new URL(`${idpBase}/auth/authorize`);
-    authorizeUrl.searchParams.set('client_id', clientId);
-    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-    authorizeUrl.searchParams.set('response_type', 'code');
-    authorizeUrl.searchParams.set('scope', 'openid profile email');
-    authorizeUrl.searchParams.set('state', returnUrl); // opcional pero recomendado
-
-    return res.redirect(authorizeUrl.toString());
+    return { ok: true, user: req['user'] };
   }
 }
