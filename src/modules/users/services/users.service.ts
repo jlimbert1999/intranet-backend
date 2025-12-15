@@ -63,7 +63,7 @@ export class UsersService {
   }
 
   async findUserByExternalKey(externalKey: string) {
-    return this.userRepository.findOneBy({ externalKey });
+    return this.userRepository.findOneBy({ externalKey, roles: true });
   }
 
   private async encryptPassword(password: string): Promise<string> {

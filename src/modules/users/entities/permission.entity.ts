@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, Unique } from 'typeorm';
 import { Role } from './role.entity';
 
+@Unique(['resource', 'action'])
 @Entity('permissions')
 export class Permission {
   @PrimaryGeneratedColumn('uuid')

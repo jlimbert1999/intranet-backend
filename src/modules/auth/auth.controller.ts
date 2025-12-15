@@ -1,11 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  Res,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import type { Request, Response } from 'express';
 import { AuthGuard } from './guards/auth/auth.guard';
-import { LoginDto } from './dtos';
-import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from 'src/config';
 
 @Controller('auth')
@@ -71,5 +82,32 @@ export class AuthController {
   @UseGuards(AuthGuard)
   checkAuthStatus(@Req() req: Request) {
     return { ok: true, user: req['user'] };
+  }
+
+  @Post('refresh')
+  async refresh(@Req() request: Request, @Res() response: Response) {
+    console.log("REFRESH INICIADO");
+    const refreshToken = request.cookies?.['refresh_token'] as string | undefined;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('No refresh token');
+    }
+
+    const tokens = await this.authService.refreshToken(refreshToken);
+    response.cookie('intranet_access', tokens.accessToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      maxAge: 15 * 60 * 1000,
+    });
+
+    response.cookie('intranet_refresh', tokens.refreshToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return response.json({ success: true });
   }
 }

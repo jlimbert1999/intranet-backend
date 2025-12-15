@@ -10,8 +10,9 @@ import { User } from '../users/entities';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from 'src/config';
-import { RefreshTokenResult, DirectLoginResult } from './interfaces';
+import { RefreshTokenResult, DirectLoginResult, RefreshTokenPayload } from './interfaces';
 import { AxiosError } from 'axios';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     private readonly http: HttpService,
     @InjectRepository(User) private userRepository: Repository<User>,
     private configService: ConfigService<EnvironmentVariables>,
+    private jwtService: JwtService,
   ) {}
 
   async handleOAuthCallback(code: string): Promise<{ access_token: string; refresh_token: string }> {
@@ -33,22 +35,6 @@ export class AuthService {
     );
 
     return response.data;
-  }
-
-  async refreshToken(refreshToken: string) {
-    try {
-      const request = this.http.post<{ accessToken: string; refreshToken: string }>(
-        'http://localhost:8000/auth/refresh',
-        {
-          refreshToken,
-          client_id: 'intranet',
-        },
-      );
-      return await lastValueFrom(request);
-    } catch (error) {
-      console.log('Refresh failed', error);
-      throw new UnauthorizedException();
-    }
   }
 
   async refreshTokens(refreshToken: string) {
@@ -89,5 +75,20 @@ export class AuthService {
     authorizeUrl.searchParams.set('scope', 'openid profile email');
     authorizeUrl.searchParams.set('state', redirectUri); // opcional pero recomendado
     return authorizeUrl.toString();
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const result = await lastValueFrom(
+        this.http.post<RefreshTokenResult>(`${this.configService.getOrThrow<string>('IDENTITY_HUB_URL')}/auth/token`, {
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          client_id: this.configService.getOrThrow<string>('CLIENT_KEY'),
+        }),
+      );
+      return result.data;
+    } catch (error) {
+      throw new UnauthorizedException();
+    }
   }
 }
